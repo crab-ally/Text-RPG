@@ -18,7 +18,18 @@
     <div class="game-container">
         <!-- 게임 제목 헤더 -->
         <header>
-            <h1><span class="accent">RPG</span></h1>
+            <h1><span class="accent">Text-RPG</span></h1>
+            <div class="header-right">
+                <div class="location-indicator">
+                    <span class="loc-icon">📍</span>
+                    <span id="current-location">마을</span>
+                </div>
+                <div class="gold-indicator">
+                    <span class="gold-icon">💰</span>
+                    <span id="player-gold" class="value">0</span>
+                    <span class="gold-unit">Gold</span>
+                </div>
+            </div>
         </header>
 
         <div class="main-layout">
@@ -32,10 +43,6 @@
                     <div class="stat-box">
                         <span class="label">DEF</span>
                         <span id="player-def" class="value">5</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="label">GOLD</span>
-                        <span id="player-gold" class="value">0</span>
                     </div>
                     <div class="stat-box">
                         <span class="label">EXP</span>
@@ -72,18 +79,23 @@
 
                 <!-- 게임 로그 패널: 게임의 진행 상황을 텍스트로 출력 -->
                 <section id="log-panel" class="log-panel">
-                    <div class="log-entry">네온 RPG에 오신 것을 환영합니다.</div>
-                    <div class="log-entry">모험을 시작하려면 '탐험하기' 버튼을 누르세요.</div>
+                    <div class="log-entry">RPG에 오신 것을 환영합니다.</div>
                 </section>
 
                 <!-- 하단 액션 패널: 플레이어의 조작 버튼들 -->
                 <section class="action-panel">
-                    <!-- 일반 상태에서의 액션 (탐험, 휴식) -->
-                    <div id="main-actions" class="button-group">
+                    <!-- 마을 상태에서의 액션 -->
+                    <div id="town-actions" class="button-group">
+                        <button id="btn-enter-dungeon" class="btn primary">던전 입장</button>
+                        <button id="btn-enter-shop" class="btn secondary">상점 방문</button>
+                    </div>
+                    <!-- 던전 상태에서의 액션 -->
+                    <div id="dungeon-actions" class="button-group hidden">
                         <button id="btn-explore" class="btn primary">탐험하기</button>
                         <button id="btn-rest" class="btn secondary">휴식하기</button>
+                        <button id="btn-return-town" class="btn outline">마을로 돌아가기</button>
                     </div>
-                    <!-- 전투 상태에서의 액션 (공격, 도망) -->
+                    <!-- 전투 상태에서의 액션 -->
                     <div id="battle-actions" class="button-group hidden">
                         <button id="btn-attack" class="btn danger">공격</button>
                         <button id="btn-run" class="btn warning">도망치기</button>

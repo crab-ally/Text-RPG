@@ -75,7 +75,8 @@ class Monster {
 const game = {
     player: new Player(),
     currentMonster: null,
-    isBattle: false,
+    state: 'TOWN', // TOWN, DUNGEON, BATTLE
+    location: '마을',
 
     // 초기화: DOM 요소 연결 및 이벤트 리스너 등록
     init() {
@@ -88,25 +89,34 @@ const game = {
             gold: document.getElementById('player-gold'),
             exp: document.getElementById('player-exp'),
             log: document.getElementById('log-panel'),
+            location: document.getElementById('current-location'),
             monsterStatus: document.getElementById('monster-status'),
             monsterName: document.getElementById('monster-name'),
             monsterHp: document.getElementById('monster-hp'),
             monsterHpBar: document.getElementById('monster-hp-bar'),
-            mainActions: document.getElementById('main-actions'),
+            townActions: document.getElementById('town-actions'),
+            dungeonActions: document.getElementById('dungeon-actions'),
             battleActions: document.getElementById('battle-actions'),
         };
 
         // 버튼 클릭 이벤트 바인딩
+        document.getElementById('btn-enter-dungeon').onclick = () => this.enterDungeon();
+        document.getElementById('btn-enter-shop').onclick = () => this.enterShop();
+        document.getElementById('btn-return-town').onclick = () => this.enterTown();
         document.getElementById('btn-explore').onclick = () => this.explore();
         document.getElementById('btn-rest').onclick = () => this.rest();
         document.getElementById('btn-attack').onclick = () => this.attack();
         document.getElementById('btn-run').onclick = () => this.run();
 
-        this.updateUI();
+        this.enterTown(); // 시작은 마을에서
     },
 
     // 현재 플레이어 및 몬스터 상태를 화면에 갱신
     updateUI() {
+        // 플레이어 배지 정보 업데이트
+        this.el.location.innerText = this.location;
+        this.el.gold.innerText = this.player.gold;
+
         // 플레이어 HP 바 및 텍스트 업데이트
         const hpPercent = (this.player.hp / this.player.maxHp) * 100;
         this.el.hp.innerText = `${this.player.hp} / ${this.player.maxHp}`;
@@ -116,7 +126,6 @@ const game = {
         this.el.lvl.innerText = this.player.lvl;
         this.el.atk.innerText = this.player.atk;
         this.el.def.innerText = this.player.def;
-        this.el.gold.innerText = this.player.gold;
         this.el.exp.innerText = `${this.player.exp} / ${this.player.maxExp}`;
 
         // 몬스터 상태창 업데이트 (전투 중일 때만)
@@ -130,14 +139,39 @@ const game = {
             this.el.monsterStatus.classList.add('hidden');
         }
 
-        // 전투 여부에 따라 버튼 그룹 교체
-        if (this.isBattle) {
-            this.el.mainActions.classList.add('hidden');
+        // 상태에 따라 버튼 그룹 노출 제어
+        this.el.townActions.classList.add('hidden');
+        this.el.dungeonActions.classList.add('hidden');
+        this.el.battleActions.classList.add('hidden');
+
+        if (this.state === 'TOWN') {
+            this.el.townActions.classList.remove('hidden');
+        } else if (this.state === 'DUNGEON') {
+            this.el.dungeonActions.classList.remove('hidden');
+        } else if (this.state === 'BATTLE') {
             this.el.battleActions.classList.remove('hidden');
-        } else {
-            this.el.mainActions.classList.remove('hidden');
-            this.el.battleActions.classList.add('hidden');
         }
+    },
+
+    // 마을 입장
+    enterTown() {
+        this.state = 'TOWN';
+        this.location = '마을';
+        this.log('마을에 도착했습니다. 이곳은 평화로운 분위기입니다.', 'log-info');
+        this.updateUI();
+    },
+
+    // 던전 입장
+    enterDungeon() {
+        this.state = 'DUNGEON';
+        this.location = '던전 깊은 곳';
+        this.log('어두컴컴한 던전에 발을 들이밀었습니다. 긴장을 늦추지 마세요.', 'log-warning');
+        this.updateUI();
+    },
+
+    // 상점 입장 (미구현)
+    enterShop() {
+        this.log('상점은 아직 공사 중입니다. 다음 업데이트를 기대해 주세요!', 'log-info');
     },
 
     // 로그 패널에 메시지 추가
@@ -204,7 +238,7 @@ const game = {
             mData.gold + (this.player.lvl * 3)
         );
 
-        this.isBattle = true;
+        this.state = 'BATTLE';
         this.log(`야생의 ${this.currentMonster.name}(이)가 나타났다!`, 'log-warning');
         this.updateUI();
     },
@@ -245,19 +279,19 @@ const game = {
 
     // 전투 종료 상태 처리
     endBattle() {
-        this.isBattle = false;
+        this.state = 'DUNGEON';
         this.currentMonster = null;
         this.updateUI();
     },
 
     // 게임 오버 처리
     gameOver() {
-        this.isBattle = false; // 전투 상태 해제하여 버튼 패널 전환 준비
+        this.state = 'DUNGEON'; // 전투 상태 해제하여 버튼 패널 전환 준비
         this.updateUI();       // UI 갱신하여 메인 액션 패널 노출
 
         this.log('당신은 쓰러졌습니다... GAME OVER', 'log-combat');
         // 다시 시작 버튼 노출
-        this.el.mainActions.innerHTML = '<button onclick="location.reload()" class="btn primary">다시 시작</button>';
+        this.el.dungeonActions.innerHTML = '<button onclick="location.reload()" class="btn primary">다시 시작</button>';
     }
 };
 

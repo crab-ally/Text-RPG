@@ -1,14 +1,23 @@
 :root {
     /* 너무 밝지 않고 눈이 편안한 중명도 테마 변수 */
-    --bg-color: #cbd5e1;               /* 차분한 슬레이트 그레이 배경 */
-    --panel-bg: rgba(248, 250, 252, 0.9); /* 거의 흰색에 가까운 패널 (높은 명도 대비) */
-    --border-color: #94a3b8;           /* 선명한 테두리 색상 */
-    --text-primary: #0f172a;           /* 깊은 네이비 텍스트 (가독성 최우선) */
-    --text-secondary: #334155;         /* 차분한 보조 텍스트 */
-    --accent: #0284c7;                 /* 신뢰감 있는 블루 포인트 */
-    --success: #059669;                /* 차분한 녹색 */
-    --danger: #dc2626;                 /* 차분한 빨간색 */
-    --warning: #d97706;                /* 차분한 주황색 */
+    --bg-color: #cbd5e1;
+    /* 차분한 슬레이트 그레이 배경 */
+    --panel-bg: rgba(248, 250, 252, 0.9);
+    /* 거의 흰색에 가까운 패널 (높은 명도 대비) */
+    --border-color: #94a3b8;
+    /* 선명한 테두리 색상 */
+    --text-primary: #0f172a;
+    /* 깊은 네이비 텍스트 (가독성 최우선) */
+    --text-secondary: #334155;
+    /* 차분한 보조 텍스트 */
+    --accent: #0284c7;
+    /* 신뢰감 있는 블루 포인트 */
+    --success: #059669;
+    /* 차분한 녹색 */
+    --danger: #dc2626;
+    /* 차분한 빨간색 */
+    --warning: #d97706;
+    /* 차분한 주황색 */
     --font-main: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 }
@@ -57,18 +66,107 @@ body {
     }
 }
 
-header h1 {
-    font-size: 2rem;
-    letter-spacing: 0.2rem;
-    text-align: center;
-    color: var(--text-primary);
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-bg);
+    padding: 12px 20px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
     margin-bottom: 5px;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    letter-spacing: 0.05rem;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .accent {
     color: var(--accent);
     text-shadow: 0 1px 2px rgba(14, 165, 233, 0.2);
-    /* 라이트 테마용 은은한 효과 */
+}
+
+/* 위치 표시 스타일 */
+.location-indicator {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--accent);
+    padding: 6px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.loc-icon {
+    font-size: 1rem;
+}
+
+/* 골드 인디케이터 스타일 (우측 상단) */
+.gold-indicator {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #eab308;
+    padding: 6px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 10px rgba(234, 179, 8, 0.1);
+    transition: all 0.3s;
+}
+
+.gold-indicator:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.25);
+    background: #fff;
+}
+
+.gold-icon {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 0 2px rgba(234, 179, 8, 0.5));
+    animation: coinRotate 3s infinite ease-in-out;
+}
+
+.gold-indicator .value {
+    font-size: 1.1rem;
+    color: #854d0e;
+    font-weight: 800;
+}
+
+.gold-unit {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #a16207;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@keyframes coinRotate {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(15deg);
+    }
+
+    75% {
+        transform: rotate(-15deg);
+    }
 }
 
 /* 메인 레이아웃: 사이드바와 콘텐츠 좌우 배치 */
@@ -261,6 +359,19 @@ header h1 {
     display: flex;
     gap: 15px;
     width: 100%;
+    align-items: center;
+}
+
+.outline {
+    background: rgba(255, 0, 0, 0.3);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.outline:hover {
+    background: var(--accent);
+    color: white;
 }
 
 .btn {
