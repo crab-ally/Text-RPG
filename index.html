@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Abyss - Text RPG</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="menu-open">
+    <!-- Main Menu Screen -->
+    <div id="main-menu" class="main-menu-overlay">
+        <div class="menu-content">
+            <h1 class="game-title">VOID ABYSS</h1>
+            <p class="game-subtitle">심연의 끝에서 당신의 운명을 개척하십시오.</p>
+            <div id="initial-menu" class="menu-buttons">
+                <button onclick="game.startGame(false)" class="btn-primary">새 게임 시작</button>
+                <button onclick="game.showSlotSelection()" class="btn-secondary">불러오기</button>
+            </div>
+            <!-- Slot Selection View (Hidden by default) -->
+            <div id="slot-selection" class="slot-menu hidden">
+                <h2 class="menu-title">저장된 데이터 선택</h2>
+                <div id="load-slots-container" class="slots-container">
+                    <!-- Slots will be injected here -->
+                </div>
+                <button onclick="game.hideSlotSelection()" class="btn-text">뒤로 가기</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="app" class="app-container hidden">
+
+        <!-- Header: Permanent Info -->
+        <header class="game-header">
+            <div class="location-display">
+                <span class="label">현재 위치</span>
+                <div class="location-header">
+                    <h1 id="current-location">불러오는 중...</h1>
+                    <div class="header-actions">
+                        <div id="dg-counter" class="dg-counter">던전: 0/1</div>
+                        <button id="btn-manual-save" class="save-btn" onclick="game.openSaveModal()">저장</button>
+                    </div>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item gold-display">
+                    <span class="label">소지 골드</span>
+                    <span id="player-gold" class="value">0</span>
+                </div>
+                <div class="stat-item day-display">
+                    <span class="label">진행 일수</span>
+                    <span id="game-day" class="value">1</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-layout">
+            <!-- Left Sidebar: Character Stats -->
+            <aside class="sidebar left-sidebar">
+                <section class="character-info card">
+                    <h2 class="card-title">캐릭터 정보</h2>
+                    <div class="player-lv-xp">
+                        <div class="player-level">LV <span id="player-level">1</span></div>
+                        <div class="xp-wrapper">
+                            <div class="xp-text"><span id="xp-cur">0</span> / <span id="xp-max">100</span></div>
+                            <div class="xp-bar-container">
+                                <div id="xp-bar" class="xp-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-group">
+                        <div class="stat-row">
+                            <span>HP</span>
+                            <span class="stat-values"><span id="hp-cur">100</span> / <span id="hp-max">100</span></span>
+                        </div>
+                        <div class="progress-container hp">
+                            <div id="hp-bar" class="progress-bar" style="width: 100%;"></div>
+                        </div>
+
+                        <div class="stat-row">
+                            <span>MP</span>
+                            <span class="stat-values"><span id="mp-cur">50</span> / <span id="mp-max">50</span></span>
+                        </div>
+                        <div class="progress-container mp">
+                            <div id="mp-bar" class="progress-bar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="sub-stats">
+                        <div class="sub-stat">
+                            <span class="label">공격력</span>
+                            <span id="stat-atk" class="value">10</span>
+                        </div>
+                        <div class="sub-stat">
+                            <span class="label">방어력</span>
+                            <span id="stat-def" class="value">5</span>
+                        </div>
+                        <div class="sub-stat">
+                            <span class="label">치명타</span>
+                            <span id="stat-cri" class="value">5%</span>
+                        </div>
+                        <div class="sub-stat">
+                            <span class="label">회피율</span>
+                            <span id="stat-eva" class="value">5%</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="active-buffs card">
+                    <h2 class="card-title">상태 이상</h2>
+                    <div id="buff-list" class="buff-list">
+                        <!-- Buffs added dynamically -->
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Center Panel: Log & Actions -->
+            <section class="main-panel">
+                <!-- Monster Status UI (Visible during battle) -->
+                <div id="monster-status" class="monster-status hidden">
+                    <div class="monster-header">
+                        <span id="monster-name" class="monster-name">MONSTER</span>
+                        <span class="monster-hp-text"><span id="monster-hp-cur">0</span> / <span id="monster-hp-max">0</span></span>
+                    </div>
+                    <div class="progress-container monster">
+                        <div id="monster-hp-bar" class="progress-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div id="game-log" class="game-log">
+                    <!-- Log entries added dynamically -->
+                </div>
+                <div id="action-panel" class="action-panel">
+                    <!-- Action buttons added dynamically -->
+                </div>
+            </section>
+
+            <!-- Right Sidebar: Gear & Inventory -->
+            <aside class="sidebar right-sidebar">
+                <section class="equipment-section card">
+                    <h2 class="card-title">장착 장비</h2>
+                    <div class="equipment-grid">
+                        <div class="eq-slot" id="slot-weapon" data-type="weapon">
+                            <span class="slot-label">무기</span>
+                            <div class="slot-item">-</div>
+                        </div>
+                        <div class="eq-slot" id="slot-armor" data-type="armor">
+                            <span class="slot-label">갑옷</span>
+                            <div class="slot-item">-</div>
+                        </div>
+                        <div class="eq-slot" id="slot-accessory-1" data-type="accessory">
+                            <span class="slot-label">장신구 1</span>
+                            <div class="slot-item">-</div>
+                        </div>
+                        <div class="eq-slot" id="slot-accessory-2" data-type="accessory">
+                            <span class="slot-label">장신구 2</span>
+                            <div class="slot-item">-</div>
+                        </div>
+                        <div class="eq-slot" id="slot-accessory-3" data-type="accessory">
+                            <span class="slot-label">장신구 3</span>
+                            <div class="slot-item">-</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="inventory-section card">
+                    <div class="card-header">
+                        <h2 class="card-title">가방</h2>
+                        <span class="inv-count"><span id="inv-cur">0</span>/30</span>
+                    </div>
+                    <div id="inventory-list" class="inventory-grid">
+                        <!-- Inventory items added dynamically -->
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <!-- Modal for Shop, Blacksmith, etc. -->
+        <div id="game-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">알림</h2>
+                    <button id="close-modal" class="close-btn">&times;</button>
+                </div>
+                <div id="modal-body" class="modal-body">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+</body>
+
+</html>
