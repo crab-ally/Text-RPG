@@ -314,6 +314,44 @@ body {
     animation: fadeIn 0.3s ease;
 }
 
+.log-entry.reinforce-success {
+    color: var(--gold-color);
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    border-left: 4px solid var(--gold-color);
+    background: rgba(255, 215, 0, 0.05);
+    padding: 8px;
+    margin: 5px 0;
+}
+
+.log-entry.reinforce-down {
+    color: #a020f0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.log-entry.reinforce-destroy {
+    color: #ff0000;
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-align: center;
+    border: 2px solid #ff0000;
+    padding: 10px;
+    background: rgba(255, 0, 0, 0.1);
+    animation: shake 0.5s ease-in-out;
+}
+
+.log-entry.reinforce-fail {
+    color: #ff884d;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
 .log-entry.crit {
     color: #ff4d4d;
     font-weight: 800;
@@ -462,13 +500,41 @@ button.secondary {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     text-align: center;
-    padding: 5px;
+    padding: 4px;
     transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    word-break: keep-all;
+    line-height: 1.2;
+}
+
+.inv-item-name {
+    width: 100%;
+    display: block;
+}
+
+.inv-item-effect {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+
+.inv-item-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.6rem;
+    color: var(--accent-cyan);
+    font-family: 'Orbitron', sans-serif;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 3px;
+    border-radius: 3px;
 }
 
 .inv-item:hover {
