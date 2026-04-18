@@ -49,33 +49,33 @@ const GAME_DATA = {
 
     MONSTERS: {
         zone1: [
-            { name: '슬라임', hp: 50, atk: 8, def: 2, xp: 20, gold: 10, loots: ['슬라임 젤리'], eva: 5 },
-            { name: '독거미', hp: 80, atk: 12, def: 4, xp: 35, gold: 20, loots: ['거미줄'], eva: 8 },
-            { name: '슬라임 퀸', hp: 450, atk: 25, def: 12, xp: 150, gold: 100, isMidBoss: true, eva: 10 },
-            { name: '킹 슬라임', hp: 800, atk: 40, def: 15, xp: 500, gold: 300, loots: ['거대 젤리'], isBoss: true, eva: 12 }
+            { name: '슬라임', hp: 50, atk: 8, def: 2, xp: 23, gold: 10, loots: ['슬라임 젤리'], eva: 5 },
+            { name: '독거미', hp: 80, atk: 12, def: 4, xp: 40, gold: 20, loots: ['거미줄'], eva: 8 },
+            { name: '슬라임 퀸', hp: 450, atk: 25, def: 12, xp: 170, gold: 100, isMidBoss: true, eva: 10 },
+            { name: '킹 슬라임', hp: 800, atk: 40, def: 15, xp: 580, gold: 300, loots: ['거대 젤리'], isBoss: true, eva: 12 }
         ],
         zone2: [
-            { name: '돌 골렘', hp: 300, atk: 40, def: 30, xp: 120, gold: 80, loots: ['철광석'], eva: 5 },
-            { name: '미믹', hp: 200, atk: 60, def: 15, xp: 150, gold: 500, loots: ['미믹의 파편'], eva: 15 },
-            { name: '골렘 수호자', hp: 2500, atk: 120, def: 60, xp: 800, gold: 600, isMidBoss: true, eva: 12 },
-            { name: '고블린 오버로드', hp: 3500, atk: 150, def: 80, xp: 2500, gold: 2000, loots: ['왕의 징표'], isBoss: true, eva: 15 }
+            { name: '돌 골렘', hp: 300, atk: 40, def: 30, xp: 140, gold: 80, loots: ['철광석'], eva: 5 },
+            { name: '미믹', hp: 200, atk: 60, def: 15, xp: 175, gold: 500, loots: ['미믹의 파편'], eva: 15 },
+            { name: '골렘 수호자', hp: 2500, atk: 120, def: 60, xp: 920, gold: 600, isMidBoss: true, eva: 12 },
+            { name: '고블린 오버로드', hp: 3500, atk: 150, def: 80, xp: 2900, gold: 2000, loots: ['왕의 징표'], isBoss: true, eva: 15 }
         ],
         zone3: [
-            { name: '서리 예티', hp: 1200, atk: 150, def: 80, xp: 600, gold: 400, loots: ['예티의 털'], eva: 10 },
-            { name: '빙하 거머리', hp: 800, atk: 130, def: 120, xp: 550, gold: 350, loots: ['빙결 원석'], eva: 12 },
-            { name: '서리 정령', hp: 7000, atk: 350, def: 200, xp: 3000, gold: 2000, isMidBoss: true, eva: 15 },
-            { name: '프로스트 자이언트', hp: 12000, atk: 450, def: 250, xp: 10000, gold: 8000, loots: ['서리 심장'], isBoss: true, eva: 18 }
+            { name: '서리 예티', hp: 1200, atk: 150, def: 80, xp: 700, gold: 400, loots: ['예티의 털'], eva: 10 },
+            { name: '빙하 거머리', hp: 800, atk: 130, def: 120, xp: 630, gold: 350, loots: ['빙결 원석'], eva: 12 },
+            { name: '서리 정령', hp: 7000, atk: 350, def: 200, xp: 3500, gold: 2000, isMidBoss: true, eva: 15 },
+            { name: '프로스트 자이언트', hp: 12000, atk: 450, def: 250, xp: 11500, gold: 8000, loots: ['서리 심장'], isBoss: true, eva: 18 }
         ],
         zone4: [
-            { name: '드레이크', hp: 4000, atk: 600, def: 350, xp: 2500, gold: 1500, loots: ['용의 비늘'], eva: 12 },
-            { name: '용 기사', hp: 5500, atk: 750, def: 500, xp: 3500, gold: 2500, loots: ['부러진 마검'], eva: 15 },
-            { name: '화염 드레이크', hp: 20000, atk: 1200, def: 600, xp: 15000, gold: 10000, isMidBoss: true, eva: 18 },
-            { name: '드래곤 로드', hp: 35000, atk: 1400, def: 800, xp: 50000, gold: 40000, loots: ['드래곤 코어'], isBoss: true, eva: 20 }
+            { name: '드레이크', hp: 4000, atk: 600, def: 350, xp: 2900, gold: 1500, loots: ['용의 비늘'], eva: 12 },
+            { name: '용 기사', hp: 5500, atk: 750, def: 500, xp: 4000, gold: 2500, loots: ['부러진 마검'], eva: 15 },
+            { name: '화염 드레이크', hp: 20000, atk: 1200, def: 600, xp: 17500, gold: 10000, isMidBoss: true, eva: 18 },
+            { name: '드래곤 로드', hp: 35000, atk: 1400, def: 800, xp: 58000, gold: 40000, loots: ['드래곤 코어'], isBoss: true, eva: 20 }
         ],
         zone5: [
-            { name: '심연의 망령', hp: 15000, atk: 2500, def: 1500, xp: 15000, gold: 10000, loots: ['공허의 정수'], eva: 15 },
-            { name: '공허의 그림자', hp: 100000, atk: 5000, def: 3000, xp: 250000, gold: 100000, isMidBoss: true, eva: 20 },
-            { name: '심연의 지배자', hp: 180000, atk: 6000, def: 4000, xp: 1000000, gold: 500000, loots: ['심연의 눈'], isBoss: true, eva: 25 }
+            { name: '심연의 망령', hp: 15000, atk: 2500, def: 1500, xp: 17500, gold: 10000, loots: ['공허의 정수'], eva: 15 },
+            { name: '공허의 그림자', hp: 100000, atk: 5000, def: 3000, xp: 290000, gold: 100000, isMidBoss: true, eva: 20 },
+            { name: '심연의 지배자', hp: 180000, atk: 6000, def: 4000, xp: 1150000, gold: 500000, loots: ['심연의 눈'], isBoss: true, eva: 25 }
         ]
     },
 
@@ -102,10 +102,12 @@ const GAME_DATA = {
             { id: 'a5', name: '심연의 로브', tier: 5, def: 1500, price: 1000000 }
         ],
         CONSUMABLES: [
-            { id: 'p1', name: '하급 포션', hp: 50, price: 10 },
-            { id: 'p2', name: '중급 포션', hp: 200, price: 50 },
-            { id: 'p3', name: '상급 포션', hp: 1000, price: 200 },
-            { id: 'p4', name: '마나 포션', mp: 50, price: 20 }
+            { id: 'p1', name: '최하급 포션', tier: 1, hp: 50, price: 10 },
+            { id: 'p2', name: '하급 포션', tier: 2, hp: 150, price: 50 },
+            { id: 'p3', name: '중급 포션', tier: 3, hp: 500, price: 200 },
+            { id: 'p4', name: '상급 포션', tier: 4, hp: 1500, price: 800 },
+            { id: 'p5', name: '최상급 포션', tier: 5, hp: 5000, price: 5000 },
+            { id: 'p6', name: '마나 포션', tier: 1, mp: 50, price: 30 }
         ]
     },
 

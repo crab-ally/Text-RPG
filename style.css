@@ -588,6 +588,37 @@ button.secondary {
 }
 
 /* Building/Shop Specific */
+.shop-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.shop-tab {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-dim);
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.shop-tab:hover {
+    color: white;
+    border-color: var(--accent-purple);
+}
+
+.shop-tab.active {
+    background: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 15px rgba(123, 79, 255, 0.4);
+}
+
 .shop-grid {
     display: grid;
     gap: 10px;
@@ -872,4 +903,31 @@ body.menu-open {
 
 .btn-text:hover {
     color: white;
+}
+
+/* 세이브 슬롯 삭제 버튼 스타일 */
+.slot-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.slot-delete-btn {
+    background: rgba(255, 77, 77, 0.1);
+    color: #ff4d4d;
+    border: 1px solid #ff4d4d;
+    font-size: 0.75rem;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.slot-delete-btn:hover {
+    background: #ff4d4d;
+    color: white;
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
 }

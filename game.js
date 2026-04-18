@@ -27,6 +27,7 @@ class Game {
             }
         };
         this.currentBattle = null; // 현재 진행 중인 전투 정보 (전투 중이 아닐 때는 null)
+        this.dungeonRestCount = 0; // 던전 내 휴식 횟수 추적
         this.init();
     }
 
@@ -87,6 +88,9 @@ class Game {
         container.innerHTML = '';
         for (let i = 1; i <= 3; i++) {
             const summary = this.getSlotSummary(i);
+            const slotWrapper = document.createElement('div');
+            slotWrapper.className = 'slot-wrapper';
+
             const slot = document.createElement('div');
             slot.className = `slot-card ${!summary ? 'empty' : ''}`;
             if (summary) {
@@ -96,10 +100,21 @@ class Game {
                     <div class="slot-loc">${summary.location}</div>
                 `;
                 slot.onclick = () => this.startGame(true, i);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'slot-delete-btn';
+                deleteBtn.innerText = '삭제';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.deleteGame(i, 'load');
+                };
+                slotWrapper.appendChild(slot);
+                slotWrapper.appendChild(deleteBtn);
             } else {
                 slot.innerHTML = `<div class="slot-empty-text">비어 있음</div>`;
+                slotWrapper.appendChild(slot);
             }
-            container.appendChild(slot);
+            container.appendChild(slotWrapper);
         }
     }
 
@@ -111,9 +126,12 @@ class Game {
         for (let i = 1; i <= 3; i++) {
             const summary = this.getSlotSummary(i);
             h += `
-                <div class="slot-card ${!summary ? 'empty' : ''}" onclick="game.saveGame(${i})">
-                    <div class="slot-number">SLOT ${i}</div>
-                    ${summary ? `<div class="slot-lv">LV ${summary.level}</div><div class="slot-loc">${summary.location}</div>` : '<div class="slot-empty-text">덮어쓰기</div>'}
+                <div class="slot-wrapper">
+                    <div class="slot-card ${!summary ? 'empty' : ''}" onclick="game.saveGame(${i})">
+                        <div class="slot-number">SLOT ${i}</div>
+                        ${summary ? `<div class="slot-lv">LV ${summary.level}</div><div class="slot-loc">${summary.location}</div>` : '<div class="slot-empty-text">덮어쓰기</div>'}
+                    </div>
+                    ${summary ? `<button class="slot-delete-btn" onclick="event.stopPropagation(); game.deleteGame(${i}, 'save')">삭제</button>` : ''}
                 </div>
             `;
         }
@@ -135,6 +153,18 @@ class Game {
         localStorage.setItem(`void_abyss_save_${slot}`, JSON.stringify(this.gameState));
         this.log(`슬롯 ${slot}에 진행 상황이 저장되었습니다.`, 'system');
         this.closeModal();
+    }
+
+    /**
+     * 특정 슬롯의 세이브 데이터를 삭제합니다.
+     */
+    deleteGame(slot, context) {
+        if (confirm(`슬롯 ${slot}의 데이터를 정말 삭제하시겠습니까?`)) {
+            localStorage.removeItem(`void_abyss_save_${slot}`);
+            this.log(`슬롯 ${slot}의 데이터가 삭제되었습니다.`, 'system');
+            if (context === 'load') this.renderLoadSlots();
+            else if (context === 'save') this.openSaveModal();
+        }
     }
 
     /**
@@ -410,66 +440,131 @@ class Game {
     }
 
     /**
-     * 상점 모달을 엽니다. 현재 마을 티어에 맞는 아이템 목록과 
-     * 인벤토리 확장 옵션을 렌더링합니다.
+     * 상점 모달을 엽니다. 구매와 판매 탭으로 구분됩니다.
      */
-    openShop() {
+    openShop(mode = 'buy') {
         if (!this.purchasedInSession) this.purchasedInSession = new Set();
         const tier = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).tier;
         const inf = this.gameState.world.inflation;
-        let h = '<div class="shop-container">';
+        const p = this.gameState.player;
 
-        // 아이템 그룹별 렌더링 헬퍼
-        const renderGroup = (title, items, cat) => {
-            h += `<h3>${title}</h3><div class="shop-grid">`;
-            items.filter(i => (i.tier || 0) <= tier).forEach(it => {
-                const pr = Math.floor(it.price * inf);
-                const isBought = (cat !== 'CONSUMABLES' && this.purchasedInSession.has(it.id));
-                h += `
+        let h = `
+            <div class="shop-tabs">
+                <button class="shop-tab ${mode === 'buy' ? 'active' : ''}" onclick="game.openShop('buy')">구매</button>
+                <button class="shop-tab ${mode === 'sell' ? 'active' : ''}" onclick="game.openShop('sell')">판매</button>
+            </div>
+            <div class="shop-container">
+        `;
+
+        if (mode === 'buy') {
+            // 아이템 그룹별 렌더링 헬퍼
+            const renderGroup = (title, items, cat) => {
+                h += `<h3>${title}</h3><div class="shop-grid">`;
+                items.filter(i => {
+                    if (cat === 'CONSUMABLES') {
+                        // 상점에서는 최대 '상급'(Tier 4)까지만 판매
+                        return (i.tier || 0) <= Math.min(tier, 4);
+                    }
+                    return (i.tier || 0) <= tier;
+                }).forEach(it => {
+                    const pr = Math.floor(it.price * inf);
+                    const isBought = (cat !== 'CONSUMABLES' && this.purchasedInSession.has(it.id));
+                    h += `
+                        <div class="shop-item">
+                            <div class="shop-item-info">
+                                <span class="shop-item-name">${it.name}</span>
+                                <span class="shop-item-detail">${it.atk ? 'ATK+' + it.atk : (it.def ? 'DEF+' + it.def : (it.hp ? 'HP+' + it.hp : 'MP+' + it.mp))}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="shop-item-price">${pr}G</span>
+                                <button onclick="game.buyItem('${cat}', '${it.id}')" ${isBought ? 'disabled' : ''}>${isBought ? '구매 완료' : '구매'}</button>
+                            </div>
+                        </div>`;
+                });
+                h += '</div>';
+            };
+
+            renderGroup('무기', GAME_DATA.ITEMS.WEAPONS, 'WEAPONS');
+            renderGroup('방어구', GAME_DATA.ITEMS.ARMORS, 'ARMORS');
+            renderGroup('소모품', GAME_DATA.ITEMS.CONSUMABLES, 'CONSUMABLES');
+
+            // 인벤토리 확장 섹션
+            const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
+            const nextSlots = p.invMax === 10 ? 15 : (p.invMax === 15 ? 20 : (p.invMax === 20 ? 25 : (p.invMax === 25 ? 30 : (p.invMax === 30 ? 40 : null))));
+            const expansionCosts = { 15: 500, 20: 2000, 25: 10000, 30: 50000, 40: 200000 };
+            const tierLimits = { 1: 15, 2: 20, 3: 25, 4: 30, 5: 40 };
+
+            if (nextSlots && nextSlots <= tierLimits[town.tier]) {
+                const cost = expansionCosts[nextSlots];
+                h += `<h3>인벤토리 확장</h3><div class="shop-grid">
                     <div class="shop-item">
                         <div class="shop-item-info">
-                            <span class="shop-item-name">${it.name}</span>
-                            <span class="shop-item-detail">${it.atk ? 'ATK+' + it.atk : (it.def ? 'DEF+' + it.def : (it.hp ? 'HP+' + it.hp : 'MP+' + it.mp))}</span>
+                            <span class="shop-item-name">전술 가방 확장 (+${nextSlots - p.invMax}칸)</span>
+                            <span class="shop-item-detail">가방 최대 칸수가 ${nextSlots}칸으로 증가합니다.</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <span class="shop-item-price">${pr}G</span>
-                            <button onclick="game.buyItem('${cat}', '${it.id}')" ${isBought ? 'disabled' : ''}>${isBought ? '구매 완료' : '구매'}</button>
+                            <span class="shop-item-price">${cost}G</span>
+                            <button onclick="game.expandInventory(${nextSlots}, ${cost})">구매</button>
                         </div>
-                    </div>`;
-            });
+                    </div>
+                </div>`;
+            } else if (nextSlots) {
+                h += `<h3>인벤토리 확장</h3><p style="font-size:0.8rem; color:var(--text-dim);">이 마을에서는 더 이상 가방을 확장할 수 없습니다. (현재: ${p.invMax}칸)</p>`;
+            }
+        } else {
+            // 판매 모드: 인벤토리 목록 렌더링
+            h += '<h3>아이템 판매</h3><div class="shop-grid">';
+            if (p.inventory.length === 0) {
+                h += '<p style="color:var(--text-dim);">가방이 비어 있습니다.</p>';
+            } else {
+                p.inventory.forEach((it, idx) => {
+                    const sellPrice = this.calculateSellPrice(it);
+                    const plusText = it.plus > 0 ? ` +${it.plus}` : '';
+                    h += `
+                        <div class="shop-item">
+                            <div class="shop-item-info">
+                                <span class="shop-item-name">${it.name}${plusText}</span>
+                                <span class="shop-item-detail">${it.count > 1 ? `수량: ${it.count} / ` : ''}${it.atk ? 'ATK+' + it.atk : (it.def ? 'DEF+' + it.def : (it.hp ? 'HP+' + it.hp : 'MP+' + it.mp))}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="shop-item-price">${sellPrice.toLocaleString()}G</span>
+                                <button onclick="game.sellItem(${idx})">판매</button>
+                            </div>
+                        </div>`;
+                });
+            }
             h += '</div>';
         }
 
-        renderGroup('무기', GAME_DATA.ITEMS.WEAPONS, 'WEAPONS');
-        renderGroup('방어구', GAME_DATA.ITEMS.ARMORS, 'ARMORS');
-        renderGroup('소모품', GAME_DATA.ITEMS.CONSUMABLES, 'CONSUMABLES');
-
-        // 인벤토리 확장 섹션
-        const p = this.gameState.player;
-        const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
-        const nextSlots = p.invMax === 10 ? 15 : (p.invMax === 15 ? 20 : (p.invMax === 20 ? 25 : (p.invMax === 25 ? 30 : (p.invMax === 30 ? 40 : null))));
-        const expansionCosts = { 15: 500, 20: 2000, 25: 10000, 30: 50000, 40: 200000 };
-        const tierLimits = { 1: 15, 2: 20, 3: 25, 4: 30, 5: 40 };
-
-        if (nextSlots && nextSlots <= tierLimits[town.tier]) {
-            const cost = expansionCosts[nextSlots];
-            h += `<h3>인벤토리 확장</h3><div class="shop-grid">
-                <div class="shop-item">
-                    <div class="shop-item-info">
-                        <span class="shop-item-name">전술 가방 확장 (+${nextSlots - p.invMax}칸)</span>
-                        <span class="shop-item-detail">가방 최대 칸수가 ${nextSlots}칸으로 증가합니다.</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="shop-item-price">${cost}G</span>
-                        <button onclick="game.expandInventory(${nextSlots}, ${cost})">구매</button>
-                    </div>
-                </div>
-            </div>`;
-        } else if (nextSlots) {
-            h += `<h3>인벤토리 확장</h3><p style="font-size:0.8rem; color:var(--text-dim);">이 마을에서는 더 이상 가방을 확장할 수 없습니다. (현재: ${p.invMax}칸)</p>`;
-        }
-
         this.showModal('상점', h + '</div>');
+    }
+
+    /**
+     * 아이템의 판매 가격을 계산합니다.
+     * 기본은 구매가의 40%이며, 강화 단계에 따라 복리로 보너스가 붙습니다.
+     */
+    calculateSellPrice(it) {
+        const base = (it.price || 0) * 0.4;
+        const plus = it.plus || 0;
+        // 강화 단계당 10%씩 복리 증가
+        return Math.floor(base * Math.pow(1.1, plus)) * (it.count || 1);
+    }
+
+    /**
+     * 인벤토리의 특정 아이템을 판매합니다.
+     */
+    sellItem(idx) {
+        const p = this.gameState.player;
+        const it = p.inventory[idx];
+        if (!it) return;
+
+        const price = this.calculateSellPrice(it);
+        p.gold += price;
+        p.inventory.splice(idx, 1);
+
+        this.log(`${it.name}을(를) ${price} G에 판매했습니다.`, 'gain');
+        this.updateUI();
+        this.openShop('sell'); // 판매 후 목록 갱신을 위해 판매 탭 다시 열기
     }
 
     /**
@@ -554,6 +649,7 @@ class Game {
         if (w.dungeonDayUsed) { this.log('하루에 한 번만 가능합니다.', 'system'); return; }
         document.body.classList.add('in-dungeon');
         w.dungeonDayUsed = true;
+        this.dungeonRestCount = 0; // 던전 입장 시 휴식 횟수 초기화
         this.log(`--- ${t.dungeon.name} 진입 ---`, 'location-change');
         this.exploreLoop(t.dungeon, 0);
         this.updateUI();
@@ -592,9 +688,10 @@ class Game {
 
         const p = document.getElementById('action-panel');
         // 탐험 옵션 구성: 전진, 휴식, 귀환
+        const restDisabled = this.dungeonRestCount >= 3;
         p.innerHTML = `
             <button onclick="game.nextEvent('${dg.id}', ${step})">전진 (${step + 1}/${dg.steps})</button>
-            <button onclick="game.dungeonRest('${dg.id}', ${step})">휴식</button>
+            <button onclick="game.dungeonRest('${dg.id}', ${step})" ${restDisabled ? 'disabled' : ''}>휴식 (${this.dungeonRestCount}/3)</button>
             <button class="secondary" onclick="game.exitDungeon()">귀환</button>
         `;
     }
@@ -604,8 +701,14 @@ class Game {
      * 소량의 HP/MP를 회복하지만, 일정 확률로 적의 기습을 받을 수 있습니다.
      */
     dungeonRest(dgId, step) {
+        if (this.dungeonRestCount >= 3) {
+            this.log('더 이상 휴식할 수 없습니다. (최대 3회)', 'system');
+            return;
+        }
+
         const p = this.gameState.player;
         const dg = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).dungeon;
+        this.dungeonRestCount++;
 
         // 30% 확률로 적의 기습 발생
         if (Math.random() < 0.3) {
@@ -619,7 +722,7 @@ class Game {
             p.hp = Math.min(p.hpMax, p.hp + recoverHP);
             p.mp = Math.min(p.mpMax, p.mp + recoverMP);
 
-            this.log('조심스럽게 휴식을 취했습니다.', 'system');
+            this.log(`조심스럽게 휴식을 취했습니다. (${this.dungeonRestCount}/3)`, 'system');
             this.log(`HP +${recoverHP}, MP +${recoverMP} 회복 완료.`, 'gain');
             this.updateUI();
             // 휴식 후 다시 루프 표시
@@ -679,9 +782,9 @@ class Game {
             p.gold += g;
             this.log(`보물상자를 열어 <strong>${g} Gold</strong>를 획득했습니다!`, 'gain');
         } else if (r < 0.95) {
-            // 15% 확률: 무작위 포션
-            const potions = GAME_DATA.ITEMS.CONSUMABLES;
-            const potion = potions[Math.floor(Math.random() * potions.length)];
+            // 15% 확률: 현재 마을 티어에 맞는 무작위 포션 획득
+            const potionPool = GAME_DATA.ITEMS.CONSUMABLES.filter(i => (i.tier || 0) <= tier);
+            const potion = potionPool[Math.floor(Math.random() * potionPool.length)];
 
             if (p.inventory.length < p.invMax) {
                 const existing = p.inventory.find(i => i.id === potion.id && i.category === 'CONSUMABLES');
@@ -912,6 +1015,40 @@ class Game {
             if (next && !p.unlockedTowns.includes(next.id)) { p.unlockedTowns.push(next.id); this.log(`${next.name} 해금!`, 'system'); }
         }
         this.updateUI();
+
+        // 몬스터 처치 시 포션 드랍 로직 추가
+        this.handlePotionDrop(b);
+    }
+
+    /**
+     * 전투 승리 시 확률적으로 포션을 드랍합니다.
+     */
+    handlePotionDrop(battle) {
+        const p = this.gameState.player;
+        const b = battle;
+        const tier = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).tier;
+        
+        let dropChance = 0.05; // 일반 몬스터 5%
+        if (b.type === 'mid' || b.type === 'mid_sequential') dropChance = 0.25; // 중간 보스 25%
+        else if (b.isBoss || b.type === 'boss') dropChance = 0.6; // 최종 보스 60%
+
+        if (Math.random() < dropChance) {
+            // 현재 던전 티어에 맞는 포션 풀 구성
+            const potionPool = GAME_DATA.ITEMS.CONSUMABLES.filter(i => (i.tier || 0) <= tier);
+            if (potionPool.length === 0) return;
+
+            const potion = potionPool[Math.floor(Math.random() * potionPool.length)];
+
+            if (p.inventory.length < p.invMax) {
+                const existing = p.inventory.find(i => i.id === potion.id && i.category === 'CONSUMABLES');
+                if (existing) existing.count = (existing.count || 1) + 1;
+                else p.inventory.push({ ...potion, category: 'CONSUMABLES', count: 1, plus: 0 });
+                this.log(`몬스터가 <strong>${potion.name}</strong>을(를) 떨어뜨렸습니다!`, 'gain');
+                this.updateUI();
+            } else {
+                this.log(`몬스터가 ${potion.name}을(를) 떨어뜨렸지만 가방이 가득 찼습니다.`, 'lose');
+            }
+        }
     }
 
     /**
@@ -969,7 +1106,12 @@ class Game {
             return;
         }
 
-        let h = '<div class="shop-grid">';
+        let h = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid var(--border-color);">
+                <span style="color:var(--text-dim); font-size:0.85rem; font-weight:700;">보유 자금</span>
+                <span style="color:var(--gold-color); font-weight:700; font-family:'Orbitron', sans-serif; font-size:1.1rem;">${this.gameState.player.gold.toLocaleString()} G</span>
+            </div>
+            <div class="shop-grid">`;
         const renderEqRow = (it, type, label) => {
             if (!it) return;
             const plus = it.plus || 0;
