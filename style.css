@@ -87,6 +87,105 @@ body {
     box-shadow: 0 0 10px rgba(123, 79, 255, 0.3);
 }
 
+.daily-quest-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    min-width: 0;
+    max-width: 220px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 242, 255, 0.35);
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.7rem;
+}
+
+.daily-quest-header:hover {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
+}
+
+.daily-quest-header--idle {
+    border-color: var(--border-color);
+    color: var(--text-dim);
+}
+
+.daily-quest-header--idle:hover {
+    border-color: rgba(0, 242, 255, 0.45);
+}
+
+.daily-quest-header .dq-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+}
+
+.daily-quest-header .dq-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.daily-quest-header .dq-main {
+    font-weight: 600;
+    color: var(--text-main, #e8e8f0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.daily-quest-header .dq-count {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    color: var(--accent-cyan);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.daily-quest-header .dq-status {
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.daily-quest-header .dq-status.ready {
+    color: var(--gold-color);
+}
+
+.daily-quest-header .dq-status.done {
+    color: var(--text-dim);
+}
+
+.daily-quest-header .dq-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.daily-quest-header .dq-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+    transition: width 0.25s ease;
+}
+
+.daily-quest-header--complete .dq-bar-fill {
+    background: var(--gold-color);
+}
+
+.daily-quest-header--claimed .dq-bar-fill {
+    width: 100% !important;
+    opacity: 0.45;
+}
+
 .save-btn {
     background: linear-gradient(135deg, var(--accent-purple), #8a2be2) !important;
     color: white !important;
@@ -930,4 +1029,46 @@ body.menu-open {
     background: #ff4d4d;
     color: white;
     box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
+}
+
+/* Quest UI Styles */
+.quest-welcome {
+    text-align: center;
+    padding: 20px;
+}
+
+.quest-welcome p {
+    margin-bottom: 25px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+
+.quest-item {
+    padding: 5px;
+}
+
+.quest-progress-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 25px;
+}
+
+.quest-item h3 {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+.quest-progress-box .progress-container {
+    height: 10px;
+    border-radius: 5px;
+}
+
+.quest-progress-box .progress-bar {
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
 }

@@ -12,7 +12,7 @@ class Game {
          */
         this.gameState = {
             player: {
-                level: 1, xp: 0, xpNext: 80,               // 레벨 및 경험치 시스템
+                level: 1, xp: 0, xpNext: 70,               // 레벨 및 경험치 시스템 (80 -> 70 하향)
                 hp: 100, hpMax: 100, mp: 50, mpMax: 50,    // 생명력 및 마력
                 atk: 10, def: 5, cri: 5, eva: 5, gold: 500, // 전투 스탯 및 재화
                 equipment: { weapon: null, armor: null, accessory: [null, null, null] }, // 장착 장비
@@ -23,7 +23,8 @@ class Game {
             },
             world: {
                 currentLocation: 'town1', day: 1, inflation: 1.0, // 현재 장소, 날짜, 물가 상승률
-                dungeonDayUsed: false, losses: []                  // 던전 이용 여부 및 유실물 데이터
+                dungeonDayUsed: false, losses: [],                  // 던전 이용 여부 및 유실물 데이터
+                quest: null                                        // 일일 퀘스트 데이터
             }
         };
         this.currentBattle = null; // 현재 진행 중인 전투 정보 (전투 중이 아닐 때는 null)
@@ -217,6 +218,7 @@ class Game {
      */
     updateUI() {
         const p = this.gameState.player; const w = this.gameState.world;
+        this.invalidateStaleDailyQuest();
 
         // 상단 캐릭터 바 업데이트
         document.getElementById('player-level').innerText = p.level;
@@ -289,6 +291,80 @@ class Game {
             dgCounter.innerText = `던전: ${used ? '1' : '0'}/1`;
             dgCounter.classList.toggle('used', used);
         }
+
+        this.renderDailyQuestHeader();
+    }
+
+    /**
+     * 날짜·마을 변경 등으로 무효화된 일일 퀘스트를 제거합니다.
+     */
+    invalidateStaleDailyQuest() {
+        const w = this.gameState.world;
+        const curDay = w.day;
+        const townId = w.currentLocation;
+        if (w.quest && (w.quest.day < curDay || (w.quest.townId !== townId && !w.quest.claimed))) {
+            w.quest = null;
+        }
+    }
+
+    /**
+     * 헤더(저장 버튼 옆)에 일일 퀘스트 요약·진행도를 표시합니다.
+     */
+    renderDailyQuestHeader() {
+        const qh = document.getElementById('daily-quest-header');
+        if (!qh) return;
+
+        const esc = (t) => String(t)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/"/g, '&quot;');
+
+        const open = () => this.openQuest();
+        qh.onclick = open;
+        qh.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+            }
+        };
+
+        const w = this.gameState.world;
+        if (!w.quest) {
+            qh.className = 'daily-quest-header daily-quest-header--idle';
+            qh.title = '일일 퀘스트 — 마을에서 수락';
+            qh.innerHTML = `
+                <div class="dq-row">
+                    <span class="dq-tag">일일</span>
+                    <span class="dq-main">퀘스트 없음</span>
+                </div>
+                <span class="dq-status" style="color:var(--text-dim);font-weight:400;">마을 · 일일 퀘스트에서 수락</span>
+            `;
+            return;
+        }
+
+        const q = w.quest;
+        const pct = Math.min(100, (q.currentCount / q.targetCount) * 100);
+        let statusHtml = '';
+        let extraClass = '';
+        if (q.claimed) {
+            statusHtml = '<span class="dq-status done">보상 수령 완료</span>';
+            extraClass = ' daily-quest-header--claimed';
+        } else if (q.completed) {
+            statusHtml = '<span class="dq-status ready">보상 수령 가능</span>';
+            extraClass = ' daily-quest-header--complete';
+        }
+
+        qh.className = 'daily-quest-header' + extraClass;
+        qh.title = '일일 퀘스트 — 클릭하여 상세';
+        qh.innerHTML = `
+            <div class="dq-row">
+                <span class="dq-tag">일일</span>
+                <span class="dq-main">${esc(q.monsterName)} 처치</span>
+                <span class="dq-count">${q.currentCount} / ${q.targetCount}</span>
+            </div>
+            ${statusHtml ? `<div class="dq-row">${statusHtml}</div>` : ''}
+            <div class="dq-bar" aria-hidden="true"><div class="dq-bar-fill" style="width:${pct}%"></div></div>
+        `;
     }
 
     /**
@@ -400,6 +476,7 @@ class Game {
         else if (b === 'shop') this.openShop();
         else if (b === 'dungeon') this.enterDungeon();
         else if (b === 'blacksmith') this.openBlacksmith();
+        else if (b === 'quest') this.openQuest();
         else this.log(`${this.getBuildingName(b)}은(는) 구현 중입니다.`, 'system');
     }
 
@@ -434,7 +511,7 @@ class Game {
         const p = this.gameState.player; const w = this.gameState.world;
         if (p.gold < cost) { alert('골드 부족'); return; }
         p.gold -= cost; p.hp = p.hpMax; p.mp = p.mpMax; w.day++; w.dungeonDayUsed = false;
-        const tax = Math.floor(p.gold * 0.02); p.gold -= tax; w.inflation *= 1.005;
+        const tax = Math.floor(p.gold * 0.02); p.gold -= tax; w.inflation *= 1.003;
         this.log(`하루가 지났습니다. 세금 ${tax} G가 차감되었습니다.`, 'lose');
         this.closeModal(); this.updateUI(); this.renderTownActions();
     }
@@ -449,6 +526,10 @@ class Game {
         const p = this.gameState.player;
 
         let h = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid var(--border-color);">
+                <span style="color:var(--text-dim); font-size:0.85rem; font-weight:700;">보유 자금</span>
+                <span style="color:var(--gold-color); font-weight:700; font-family:'Orbitron', sans-serif; font-size:1.1rem;">${p.gold.toLocaleString()} G</span>
+            </div>
             <div class="shop-tabs">
                 <button class="shop-tab ${mode === 'buy' ? 'active' : ''}" onclick="game.openShop('buy')">구매</button>
                 <button class="shop-tab ${mode === 'sell' ? 'active' : ''}" onclick="game.openShop('sell')">판매</button>
@@ -518,7 +599,7 @@ class Game {
                 h += '<p style="color:var(--text-dim);">가방이 비어 있습니다.</p>';
             } else {
                 p.inventory.forEach((it, idx) => {
-                    const sellPrice = this.calculateSellPrice(it);
+                    const unitPrice = this.calculateSellPrice(it, true);
                     const plusText = it.plus > 0 ? ` +${it.plus}` : '';
                     h += `
                         <div class="shop-item">
@@ -527,7 +608,7 @@ class Game {
                                 <span class="shop-item-detail">${it.count > 1 ? `수량: ${it.count} / ` : ''}${it.atk ? 'ATK+' + it.atk : (it.def ? 'DEF+' + it.def : (it.hp ? 'HP+' + it.hp : 'MP+' + it.mp))}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
-                                <span class="shop-item-price">${sellPrice.toLocaleString()}G</span>
+                                <span class="shop-item-price">${unitPrice.toLocaleString()}G</span>
                                 <button onclick="game.sellItem(${idx})">판매</button>
                             </div>
                         </div>`;
@@ -543,11 +624,12 @@ class Game {
      * 아이템의 판매 가격을 계산합니다.
      * 기본은 구매가의 40%이며, 강화 단계에 따라 복리로 보너스가 붙습니다.
      */
-    calculateSellPrice(it) {
+    calculateSellPrice(it, isUnit = false) {
         const base = (it.price || 0) * 0.4;
         const plus = it.plus || 0;
         // 강화 단계당 10%씩 복리 증가
-        return Math.floor(base * Math.pow(1.1, plus)) * (it.count || 1);
+        const unitPrice = Math.floor(base * Math.pow(1.1, plus));
+        return isUnit ? unitPrice : unitPrice * (it.count || 1);
     }
 
     /**
@@ -558,11 +640,16 @@ class Game {
         const it = p.inventory[idx];
         if (!it) return;
 
-        const price = this.calculateSellPrice(it);
+        const price = this.calculateSellPrice(it, true); // 1개 가격으로 계산
         p.gold += price;
-        p.inventory.splice(idx, 1);
 
-        this.log(`${it.name}을(를) ${price} G에 판매했습니다.`, 'gain');
+        if (it.count > 1) {
+            it.count--;
+        } else {
+            p.inventory.splice(idx, 1);
+        }
+
+        this.log(`${it.name}을(를) 1개 판매했습니다. (${price} G 획득)`, 'gain');
         this.updateUI();
         this.openShop('sell'); // 판매 후 목록 갱신을 위해 판매 탭 다시 열기
     }
@@ -777,8 +864,8 @@ class Game {
         const tier = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).tier;
 
         if (r < 0.8) {
-            // 80% 확률: 골드 보상
-            const g = Math.floor((Math.random() * 50 + 20) * (step + 1) * tier);
+            // 80% 확률: 골드 보상 (소폭 하항 조정)
+            const g = Math.floor((Math.random() * 30 + 10) * (step + 1) * tier);
             p.gold += g;
             this.log(`보물상자를 열어 <strong>${g} Gold</strong>를 획득했습니다!`, 'gain');
         } else if (r < 0.95) {
@@ -888,7 +975,10 @@ class Game {
         // 10% 확률로 특수한 능력치를 가진 뮤턴트 몬스터 출현
         if (type === 'normal' && !isB && Math.random() < 0.1) {
             const mut = GAME_DATA.MUTANTS[Math.floor(Math.random() * GAME_DATA.MUTANTS.length)];
-            m.name = mut.prefix + ' ' + m.name; if (mut.hpMult) m.hp *= mut.hpMult; if (mut.atkMult) m.atk *= mut.atkMult;
+            m.name = mut.prefix + ' ' + m.name; 
+            if (mut.hpMult) m.hp *= mut.hpMult; 
+            if (mut.atkMult) m.atk *= mut.atkMult;
+            if (mut.goldMult) m.gold *= mut.goldMult;
         }
         m.hpMax = m.hp;
 
@@ -989,11 +1079,24 @@ class Game {
         if (!b || !b.monster) return;
 
         const m = b.monster;
-        const xp = m.xp || 0; const g = m.gold || 0; 
+        const xp = m.xp || 0; 
+        const g = Math.floor((m.gold || 0) * 1.3); // 몬스터 사냥 골드 30% 상향 (기존 20%에서 추가 상향)
         p.xp += xp; p.gold += g;
 
         this.log(`${mN} 처치!`, 'victory');
         this.log(`${xp} XP, ${g} G 획득.`, 'gain');
+
+        // 퀘스트 진행도 체크
+        const q = w.quest;
+        if (q && !q.completed && q.monsterName === mN) {
+            q.currentCount++;
+            this.log(`[퀘스트] ${mN} 처치 (${q.currentCount}/${q.targetCount})`, 'system');
+            if (q.currentCount >= q.targetCount) {
+                q.completed = true;
+                this.log(`퀘스트 목표 달성! 마을에서 보상을 받으십시오.`, 'reinforce-success');
+            }
+        }
+
         if (p.xp >= p.xpNext) this.levelUp();
 
         if (b.type === 'mid') {
@@ -1055,7 +1158,7 @@ class Game {
      * 레벨 업을 처리합니다. 최대 체력/마력이 상승하고 즉시 회복됩니다.
      */
     levelUp() {
-        const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.4);
+        const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.3); // 증가율 1.4 -> 1.3 하향
         p.hpMax += 20; p.mpMax += 10; p.hp = p.hpMax; p.mp = p.mpMax; this.updateStats();
         this.log(`LEVEL UP! ${p.level} 레벨 달성!`, 'system');
     }
@@ -1117,18 +1220,50 @@ class Game {
             const plus = it.plus || 0;
             const cost = Math.floor(100 * (it.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
 
-            let riskText = '<span style="color:var(--accent-cyan)">성공 확률: 100%</span>';
-            if (plus >= 4 && plus < 7) riskText = '<span style="color:#ff884d">실패 시 수치 하락 확률 존재</span>';
-            else if (plus >= 7) riskText = '<span style="color:#ff4d4d">실패 시 파괴 확률 존재</span>';
+            let successRate = 0, downRate = 0, destroyRate = 0, failRate = 0;
+
+            if (plus < 4) {
+                // +4단계까지는 100% 성공
+                successRate = 100;
+            } else if (plus < 7) {
+                // +5 ~ +7 구간: 실패 및 하락 확률 존재
+                successRate = plus === 4 ? 70 : (plus === 5 ? 50 : 35);
+                downRate = plus === 4 ? 10 : (plus === 5 ? 20 : 30);
+                failRate = 100 - successRate - downRate;
+            } else {
+                // +8 ~ +10 구간: 파괴 확률 발생
+                successRate = plus === 7 ? 25 : (plus === 8 ? 15 : 8);
+                destroyRate = plus === 7 ? 20 : (plus === 8 ? 30 : 40);
+                downRate = 30; // 실패 시 하락 확률 상시 존재
+                failRate = 100 - successRate - destroyRate - downRate;
+            }
+
+            const getStatPreview = (statKey, label) => {
+                if (!it[statKey]) return '';
+                const cur = Math.floor(it[statKey] * Math.pow(1.15, plus));
+                const next = Math.floor(it[statKey] * Math.pow(1.15, plus + 1));
+                return `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span> <span style="color:var(--gold-color); font-size:0.7rem;">(+${next - cur})</span></div>`;
+            };
+
+            let probHtml = `<div style="font-size:0.7rem; display:flex; gap:10px; margin-top:5px; flex-wrap:wrap; font-family:'Orbitron', sans-serif;">
+                <span style="color:var(--accent-cyan)">성공: ${successRate}%</span>
+                ${downRate > 0 ? `<span style="color:#ff884d">하락: ${downRate}%</span>` : ''}
+                ${destroyRate > 0 ? `<span style="color:#ff4d4d; font-weight:700;">파괴: ${destroyRate}%</span>` : ''}
+                ${failRate > 0 ? `<span style="color:var(--text-dim)">유지: ${failRate}%</span>` : ''}
+            </div>`;
 
             h += `
-                <div class="shop-item" style="flex-direction:column; align-items:flex-start; gap:10px;">
+                <div class="shop-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
                     <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                         <span class="shop-item-name">${label}: ${it.name} +${plus}</span>
                         <span class="shop-item-price">${cost.toLocaleString()} G</span>
                     </div>
-                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                        <span style="font-size:0.75rem;">${riskText}</span>
+                    <div style="font-size:0.8rem; width:100%; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                        ${getStatPreview('atk', '공격력')}
+                        ${getStatPreview('def', '방어력')}
+                    </div>
+                    ${probHtml}
+                    <div style="display:flex; justify-content:flex-end; width:100%; margin-top:5px;">
                         <button onclick="game.reinforce('${type}')">강화</button>
                     </div>
                 </div>
@@ -1197,7 +1332,144 @@ class Game {
             this.log(`[강화 실패] ${target.name} 강화에 실패했습니다.`, 'reinforce-fail');
         }
 
-        this.updateStats(); this.updateUI(); this.closeModal();
+        this.updateStats(); this.updateUI(); this.openBlacksmith();
+    }
+
+    /**
+     * 일일 퀘스트 모달을 엽니다.
+     */
+    openQuest() {
+        const w = this.gameState.world;
+        this.invalidateStaleDailyQuest();
+
+        let h = '';
+        if (!w.quest) {
+            h = `
+                <div class="quest-welcome">
+                    <p>오늘의 의뢰가 도착했습니다. 해당 지역의 위협을 제거하고 보상을 획득하십시오.</p>
+                    <button onclick="game.generateDailyQuest()">퀘스트 받기</button>
+                </div>
+            `;
+        } else {
+            const q = w.quest;
+            const rewardText = q.reward.type === 'gold' ? `${q.reward.amount} G` : `${q.reward.name} ${q.reward.amount}개`;
+            const progress = Math.min(100, (q.currentCount / q.targetCount) * 100);
+
+            h = `
+                <div class="quest-item">
+                    <div style="margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                        <h3 style="margin:0; color:var(--accent-cyan);">[일일 퀘스트] ${q.monsterName} 처치</h3>
+                        <p style="font-size:0.85rem; color:var(--text-dim); margin-top:5px;">목표: ${q.monsterName} ${q.targetCount}마리 처치</p>
+                    </div>
+                    
+                    <div class="quest-progress-box" style="margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem;">
+                            <span>진행도</span>
+                            <span>${q.currentCount} / ${q.targetCount}</span>
+                        </div>
+                        <div class="progress-container" style="background:rgba(255,255,255,0.05);">
+                            <div class="progress-bar" style="width:${progress}%; background:var(--accent-cyan);"></div>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:15px; border:1px solid var(--border-color);">
+                        <div style="color:var(--text-dim); font-size:0.8rem; margin-bottom:5px;">보상</div>
+                        <div style="color:var(--gold-color); font-weight:700; font-size:1.1rem;">${rewardText}</div>
+                    </div>
+
+                    <div style="margin-top:25px; display:flex; gap:10px;">
+                        ${q.completed ? 
+                            `<button onclick="game.claimQuestReward()" ${q.claimed ? 'disabled' : ''}>${q.claimed ? '지급 완료' : '보상 받기'}</button>` : 
+                            `<p style="color:var(--text-dim); font-size:0.85rem;">* 던전에서 목표 몬스터를 처치하십시오.</p>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        this.showModal('일일 퀘스트', h);
+        this.updateUI();
+    }
+
+    /**
+     * 일일 퀘스트를 생성합니다.
+     */
+    generateDailyQuest() {
+        const w = this.gameState.world;
+        const townId = w.currentLocation;
+        const dungeon = GAME_DATA.TOWNS.find(t => t.id === townId).dungeon;
+        const monsters = GAME_DATA.MONSTERS[dungeon.id].filter(m => !m.isBoss && !m.isMidBoss);
+        
+        if (monsters.length === 0) {
+            this.log('이 지역에는 퀘스트 몬스터가 없습니다.', 'system');
+            return;
+        }
+
+        const m = monsters[Math.floor(Math.random() * monsters.length)];
+        const targetCount = 3 + Math.floor(Math.random() * 3); // 3 ~ 5마리
+        
+        // 보상 결정 (골드 또는 포션)
+        const isGold = Math.random() < 0.5;
+        let reward = {};
+
+        if (isGold) {
+            // 처치 목표 몬스터가 주는 총 골드의 약 1.7배 수준
+            const amount = Math.floor(m.gold * targetCount * 1.7);
+            reward = { type: 'gold', amount: amount };
+        } else {
+            // 해당 마을 티어에 맞는 HP 포션 3개
+            const tier = GAME_DATA.TOWNS.find(t => t.id === townId).tier;
+            const potion = GAME_DATA.ITEMS.CONSUMABLES.find(i => i.tier === tier && i.hp);
+            reward = { ...potion, type: 'potion', amount: 3, category: 'CONSUMABLES' };
+        }
+
+        w.quest = {
+            monsterName: m.name,
+            targetCount: targetCount,
+            currentCount: 0,
+            reward: reward,
+            day: w.day,
+            townId: townId,
+            completed: false,
+            claimed: false
+        };
+
+        this.log(`퀘스트 수락: ${m.name} ${targetCount}마리 처치`, 'system');
+        this.openQuest();
+    }
+
+    /**
+     * 퀘스트 보상을 수령합니다.
+     */
+    claimQuestReward() {
+        const w = this.gameState.world;
+        const p = this.gameState.player;
+        const q = w.quest;
+
+        if (!q || !q.completed || q.claimed) return;
+
+        if (q.reward.type === 'gold') {
+            p.gold += q.reward.amount;
+            this.log(`퀘스트 보상으로 ${q.reward.amount} G를 획득했습니다.`, 'gain');
+        } else {
+            // 포션 지급 (가방 체크)
+            if (p.inventory.length >= p.invMax) {
+                alert('가방이 가득 차 보상을 받을 수 없습니다. 공간을 확보해 주세요.');
+                return;
+            }
+            
+            const existing = p.inventory.find(i => i.id === q.reward.id && i.category === 'CONSUMABLES');
+            if (existing) {
+                existing.count = (existing.count || 1) + q.reward.amount;
+            } else {
+                p.inventory.push({ ...q.reward, count: q.reward.amount, plus: 0 });
+            }
+            this.log(`퀘스트 보상으로 ${q.reward.name} ${q.reward.amount}개를 획득했습니다.`, 'gain');
+        }
+
+        q.claimed = true;
+        this.updateUI();
+        this.closeModal();
     }
 
     /**
