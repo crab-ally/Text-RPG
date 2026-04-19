@@ -308,6 +308,24 @@ class Game {
     }
 
     /**
+     * 전투 중 표시되는 몬스터 이름에서 뮤턴트 접두를 떼어, 일일 퀘스트 목표 이름과 비교할 수 있게 합니다.
+     */
+    stripMutantMonsterName(displayName) {
+        if (!displayName) return '';
+        for (const mut of GAME_DATA.MUTANTS) {
+            const pre = mut.prefix + ' ';
+            if (displayName.startsWith(pre)) return displayName.slice(pre.length);
+        }
+        return displayName;
+    }
+
+    /** 일일 퀘스트 보상이 골드인지 (구세이브: type, 신규: rewardType) */
+    questRewardIsGold(reward) {
+        if (!reward) return false;
+        return reward.rewardType === 'gold' || reward.type === 'gold';
+    }
+
+    /**
      * 헤더(저장 버튼 옆)에 일일 퀘스트 요약·진행도를 표시합니다.
      */
     renderDailyQuestHeader() {
@@ -319,51 +337,40 @@ class Game {
             .replace(/</g, '&lt;')
             .replace(/"/g, '&quot;');
 
-        const open = () => this.openQuest();
-        qh.onclick = open;
-        qh.onkeydown = (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                open();
-            }
-        };
+        qh.onclick = null;
+        qh.onkeydown = null;
 
         const w = this.gameState.world;
         if (!w.quest) {
             qh.className = 'daily-quest-header daily-quest-header--idle';
-            qh.title = '일일 퀘스트 — 마을에서 수락';
+            qh.title = '의뢰 진행 (표시 전용) — 마을 의뢰소에서 수락';
             qh.innerHTML = `
                 <div class="dq-row">
-                    <span class="dq-tag">일일</span>
-                    <span class="dq-main">퀘스트 없음</span>
+                    <span class="dq-tag">의뢰</span>
+                    <span class="dq-main">없음</span>
                 </div>
-                <span class="dq-status" style="color:var(--text-dim);font-weight:400;">마을 · 일일 퀘스트에서 수락</span>
+                <span class="dq-status" style="color:var(--text-dim);font-weight:400;">마을 · 의뢰소에서 수락</span>
             `;
             return;
         }
 
         const q = w.quest;
-        const pct = Math.min(100, (q.currentCount / q.targetCount) * 100);
         let statusHtml = '';
-        let extraClass = '';
         if (q.claimed) {
             statusHtml = '<span class="dq-status done">보상 수령 완료</span>';
-            extraClass = ' daily-quest-header--claimed';
         } else if (q.completed) {
             statusHtml = '<span class="dq-status ready">보상 수령 가능</span>';
-            extraClass = ' daily-quest-header--complete';
         }
 
-        qh.className = 'daily-quest-header' + extraClass;
-        qh.title = '일일 퀘스트 — 클릭하여 상세';
+        qh.className = 'daily-quest-header';
+        qh.title = '의뢰 진행 (표시 전용) — 수락·보상은 마을 의뢰소';
         qh.innerHTML = `
             <div class="dq-row">
-                <span class="dq-tag">일일</span>
+                <span class="dq-tag">의뢰</span>
                 <span class="dq-main">${esc(q.monsterName)} 처치</span>
                 <span class="dq-count">${q.currentCount} / ${q.targetCount}</span>
             </div>
             ${statusHtml ? `<div class="dq-row">${statusHtml}</div>` : ''}
-            <div class="dq-bar" aria-hidden="true"><div class="dq-bar-fill" style="width:${pct}%"></div></div>
         `;
     }
 
@@ -458,7 +465,7 @@ class Game {
             'inn': '여관',
             'dungeon': '던전 입장',
             'donation': '마을 기부',
-            'quest': '일일 퀘스트',
+            'quest': '의뢰소',
             'alchemy': '연금술 실험실',
             'training': '수련장',
             'blacksmith': '대장간',
@@ -1086,14 +1093,15 @@ class Game {
         this.log(`${mN} 처치!`, 'victory');
         this.log(`${xp} XP, ${g} G 획득.`, 'gain');
 
-        // 퀘스트 진행도 체크
+        // 일일 의뢰 진행도 체크
         const q = w.quest;
-        if (q && !q.completed && q.monsterName === mN) {
+        const questTargetName = this.stripMutantMonsterName(mN);
+        if (q && !q.completed && q.monsterName === questTargetName) {
             q.currentCount++;
-            this.log(`[퀘스트] ${mN} 처치 (${q.currentCount}/${q.targetCount})`, 'system');
+            this.log(`[의뢰] ${mN} 처치 (${q.currentCount}/${q.targetCount})`, 'system');
             if (q.currentCount >= q.targetCount) {
                 q.completed = true;
-                this.log(`퀘스트 목표 달성! 마을에서 보상을 받으십시오.`, 'reinforce-success');
+                this.log(`의뢰 목표 달성! 마을 의뢰소에서 보상을 받으십시오.`, 'reinforce-success');
             }
         }
 
@@ -1336,7 +1344,7 @@ class Game {
     }
 
     /**
-     * 일일 퀘스트 모달을 엽니다.
+     * 의뢰소: 일일 의뢰 수락·보상 UI (마을 건물에서만 열립니다).
      */
     openQuest() {
         const w = this.gameState.world;
@@ -1347,18 +1355,20 @@ class Game {
             h = `
                 <div class="quest-welcome">
                     <p>오늘의 의뢰가 도착했습니다. 해당 지역의 위협을 제거하고 보상을 획득하십시오.</p>
-                    <button onclick="game.generateDailyQuest()">퀘스트 받기</button>
+                    <button onclick="game.generateDailyQuest()">의뢰 받기</button>
                 </div>
             `;
         } else {
             const q = w.quest;
-            const rewardText = q.reward.type === 'gold' ? `${q.reward.amount} G` : `${q.reward.name} ${q.reward.amount}개`;
+            const rewardText = this.questRewardIsGold(q.reward)
+                ? `${q.reward.amount} G`
+                : `${q.reward.name} ${q.reward.amount}개`;
             const progress = Math.min(100, (q.currentCount / q.targetCount) * 100);
 
             h = `
                 <div class="quest-item">
                     <div style="margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
-                        <h3 style="margin:0; color:var(--accent-cyan);">[일일 퀘스트] ${q.monsterName} 처치</h3>
+                        <h3 style="margin:0; color:var(--accent-cyan);">[일일 의뢰] ${q.monsterName} 처치</h3>
                         <p style="font-size:0.85rem; color:var(--text-dim); margin-top:5px;">목표: ${q.monsterName} ${q.targetCount}마리 처치</p>
                     </div>
                     
@@ -1380,19 +1390,19 @@ class Game {
                     <div style="margin-top:25px; display:flex; gap:10px;">
                         ${q.completed ? 
                             `<button onclick="game.claimQuestReward()" ${q.claimed ? 'disabled' : ''}>${q.claimed ? '지급 완료' : '보상 받기'}</button>` : 
-                            `<p style="color:var(--text-dim); font-size:0.85rem;">* 던전에서 목표 몬스터를 처치하십시오.</p>`
+                            `<p style="color:var(--text-dim); font-size:0.85rem;">* 던전에서 목표 몬스터를 처치하십시오. 보상 수령은 마을 의뢰소에서만 가능합니다.</p>`
                         }
                     </div>
                 </div>
             `;
         }
 
-        this.showModal('일일 퀘스트', h);
+        this.showModal('의뢰소', h);
         this.updateUI();
     }
 
     /**
-     * 일일 퀘스트를 생성합니다.
+     * 일일 의뢰를 생성합니다.
      */
     generateDailyQuest() {
         const w = this.gameState.world;
@@ -1401,26 +1411,39 @@ class Game {
         const monsters = GAME_DATA.MONSTERS[dungeon.id].filter(m => !m.isBoss && !m.isMidBoss);
         
         if (monsters.length === 0) {
-            this.log('이 지역에는 퀘스트 몬스터가 없습니다.', 'system');
+            this.log('이 지역에는 의뢰 대상 몬스터가 없습니다.', 'system');
             return;
         }
 
         const m = monsters[Math.floor(Math.random() * monsters.length)];
-        const targetCount = 3 + Math.floor(Math.random() * 3); // 3 ~ 5마리
+        const targetCount = 2 + Math.floor(Math.random() * 3); // 2 ~ 4마리
         
-        // 보상 결정 (골드 또는 포션)
+        // 보상 결정 (골드 또는 포션). rewardType으로 구분해 소모품 스프레드와 키가 겹치지 않게 함.
         const isGold = Math.random() < 0.5;
-        let reward = {};
+        const goldAmount = () => Math.max(1, Math.floor((m.gold || 0) * targetCount * 1.7));
+        let reward;
 
         if (isGold) {
-            // 처치 목표 몬스터가 주는 총 골드의 약 1.7배 수준
-            const amount = Math.floor(m.gold * targetCount * 1.7);
-            reward = { type: 'gold', amount: amount };
+            reward = { rewardType: 'gold', amount: goldAmount() };
         } else {
-            // 해당 마을 티어에 맞는 HP 포션 3개
-            const tier = GAME_DATA.TOWNS.find(t => t.id === townId).tier;
-            const potion = GAME_DATA.ITEMS.CONSUMABLES.find(i => i.tier === tier && i.hp);
-            reward = { ...potion, type: 'potion', amount: 3, category: 'CONSUMABLES' };
+            const tier = Number(GAME_DATA.TOWNS.find(t => t.id === townId)?.tier) || 1;
+            const potion = GAME_DATA.ITEMS.CONSUMABLES.find(
+                i => Number(i.tier) === tier && i.hp != null && i.hp > 0
+            );
+            if (potion) {
+                reward = {
+                    rewardType: 'potion',
+                    amount: Math.floor(Math.random() * 3) + 1,
+                    category: 'CONSUMABLES',
+                    id: potion.id,
+                    name: potion.name,
+                    tier: potion.tier,
+                    hp: potion.hp,
+                    price: potion.price
+                };
+            } else {
+                reward = { rewardType: 'gold', amount: goldAmount() };
+            }
         }
 
         w.quest = {
@@ -1434,12 +1457,12 @@ class Game {
             claimed: false
         };
 
-        this.log(`퀘스트 수락: ${m.name} ${targetCount}마리 처치`, 'system');
+        this.log(`의뢰 수락: ${m.name} ${targetCount}마리 처치`, 'system');
         this.openQuest();
     }
 
     /**
-     * 퀘스트 보상을 수령합니다.
+     * 의뢰 보상을 수령합니다.
      */
     claimQuestReward() {
         const w = this.gameState.world;
@@ -1448,23 +1471,35 @@ class Game {
 
         if (!q || !q.completed || q.claimed) return;
 
-        if (q.reward.type === 'gold') {
-            p.gold += q.reward.amount;
-            this.log(`퀘스트 보상으로 ${q.reward.amount} G를 획득했습니다.`, 'gain');
+        if (this.questRewardIsGold(q.reward)) {
+            const amt = Math.max(0, Math.floor(Number(q.reward.amount) || 0));
+            p.gold += amt;
+            this.log(`의뢰 보상으로 ${amt} G를 획득했습니다.`, 'gain');
         } else {
             // 포션 지급 (가방 체크)
             if (p.inventory.length >= p.invMax) {
                 alert('가방이 가득 차 보상을 받을 수 없습니다. 공간을 확보해 주세요.');
                 return;
             }
-            
+
             const existing = p.inventory.find(i => i.id === q.reward.id && i.category === 'CONSUMABLES');
             if (existing) {
                 existing.count = (existing.count || 1) + q.reward.amount;
             } else {
-                p.inventory.push({ ...q.reward, count: q.reward.amount, plus: 0 });
+                const stack = q.reward.amount;
+                p.inventory.push({
+                    id: q.reward.id,
+                    name: q.reward.name,
+                    tier: q.reward.tier,
+                    hp: q.reward.hp,
+                    mp: q.reward.mp,
+                    price: q.reward.price,
+                    category: 'CONSUMABLES',
+                    count: stack,
+                    plus: 0
+                });
             }
-            this.log(`퀘스트 보상으로 ${q.reward.name} ${q.reward.amount}개를 획득했습니다.`, 'gain');
+            this.log(`의뢰 보상으로 ${q.reward.name} ${q.reward.amount}개를 획득했습니다.`, 'gain');
         }
 
         q.claimed = true;

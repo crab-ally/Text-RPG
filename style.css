@@ -98,23 +98,14 @@ body {
     border-radius: 6px;
     border: 1px solid rgba(0, 242, 255, 0.35);
     background: rgba(0, 0, 0, 0.35);
-    cursor: pointer;
-    transition: var(--transition);
+    cursor: default;
+    pointer-events: none;
     font-size: 0.7rem;
-}
-
-.daily-quest-header:hover {
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
 }
 
 .daily-quest-header--idle {
     border-color: var(--border-color);
     color: var(--text-dim);
-}
-
-.daily-quest-header--idle:hover {
-    border-color: rgba(0, 242, 255, 0.45);
 }
 
 .daily-quest-header .dq-row {
@@ -161,29 +152,6 @@ body {
 
 .daily-quest-header .dq-status.done {
     color: var(--text-dim);
-}
-
-.daily-quest-header .dq-bar {
-    height: 3px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.08);
-    overflow: hidden;
-}
-
-.daily-quest-header .dq-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
-    transition: width 0.25s ease;
-}
-
-.daily-quest-header--complete .dq-bar-fill {
-    background: var(--gold-color);
-}
-
-.daily-quest-header--claimed .dq-bar-fill {
-    width: 100% !important;
-    opacity: 0.45;
 }
 
 .save-btn {
