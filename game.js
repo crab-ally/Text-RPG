@@ -472,10 +472,12 @@ class Game {
         const order = ['inn', 'shop', 'blacksmith', 'alchemy', 'training', 'antique', 'quest', 'donation'];
 
         order.forEach(b => {
-            if (town.buildings.includes(b)) {
+            const isUnlocked = town.buildings.includes(b);
+            if (isUnlocked || b === 'alchemy') {
                 const btn = document.createElement('button');
                 btn.innerText = this.getBuildingName(b);
                 btn.onclick = () => this.openBuilding(b);
+                if (!isUnlocked) btn.className = 'secondary';
                 panel.appendChild(btn);
             }
         });
@@ -580,8 +582,9 @@ class Game {
                 h += `<h3>${title}</h3><div class="shop-grid">`;
                 items.filter(i => {
                     if (cat === 'CONSUMABLES') {
-                        // 상점에서는 최대 '극농축'(Tier 5)까지만 판매, 신화/순수 등급 제외
-                        return (i.grade !== '순수') && (i.tier || 0) <= Math.min(tier, 5);
+                        // 마을 티어에 맞는 HP/MP 포션 1종씩만 판매
+                        const potionTier = Math.min(tier, 6);
+                        return Number(i.tier) === potionTier && (i.hp != null || i.mp != null);
                     }
                     // 전설(Tier 5) 등급 까지만 판매, 신화(Tier 6) 이상 제외
                     return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) <= Math.min(tier, 5);
@@ -841,9 +844,9 @@ class Game {
             this.log('휴식 중에 몬스터의 기습을 받았습니다.', 'lose');
             this.startBattle(dg, false, step);
         } else {
-            // 휴식 성공 시 HP/MP 15% 회복
-            const recoverHP = Math.floor(p.hpMax * 0.15);
-            const recoverMP = Math.floor(p.mpMax * 0.15);
+            // 휴식 성공 시 HP/MP 20% 회복
+            const recoverHP = Math.floor(p.hpMax * 0.2);
+            const recoverMP = Math.floor(p.mpMax * 0.2);
             p.hp = Math.min(p.hpMax, p.hp + recoverHP);
             p.mp = Math.min(p.mpMax, p.mp + recoverMP);
 
@@ -866,10 +869,6 @@ class Game {
         this.updateUI();
     }
 
-
-    /**
-     * 던전 탐험 진행 (랜덤 이벤트 발생: 전투/보물/조용함)
-     */
     /**
      * 던전 탐험 진행 (랜덤 이벤트 분기: 전투/보물상자/무작위 이벤트/정적)
      */
