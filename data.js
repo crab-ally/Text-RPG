@@ -130,14 +130,18 @@ const GAME_DATA = {
             { id: 'a7', name: '공허의 장막', grade: '초월', tier: 7, def: 12000, price: 0 }
         ],
         CONSUMABLES: [
-            { id: 'p1', name: '희석된 포션', grade: '희석', hp: 70, price: 15 },
-            { id: 'p2', name: '약한 포션', grade: '약함', hp: 200, price: 60 },
-            { id: 'p3', name: '농축된 포션', grade: '농축', hp: 700, price: 250 },
-            { id: 'p4', name: '고농축 포션', grade: '고농축', hp: 2500, price: 1000 },
-            { id: 'p5', name: '극농축 포션', grade: '극농축', hp: 8000, price: 6000 },
-            { id: 'p6', name: '순수한 생명수', grade: '순수', hp: 30000, price: 0 },
-            { id: 'mp1', name: '희석된 마나포션', grade: '희석', mp: 50, price: 30 },
-            { id: 'mp2', name: '순수한 마나수', grade: '순수', mp: 1000, price: 0 }
+            { id: 'p1', name: '희석된 HP 포션', grade: '희석', tier: 1, hp: 70, price: 15 },
+            { id: 'p2', name: '약한 HP포션', grade: '약함', tier: 2, hp: 200, price: 60 },
+            { id: 'p3', name: '농축된 HP 포션', grade: '농축', tier: 3, hp: 700, price: 250 },
+            { id: 'p4', name: '고농축 HP 포션', grade: '고농축', tier: 4, hp: 2500, price: 1000 },
+            { id: 'p5', name: '극농축 HP 포션', grade: '극농축', tier: 5, hp: 8000, price: 6000 },
+            { id: 'p6', name: '순수한 생명수', grade: '순수', tier: 6, hp: 30000, price: 0 },
+            { id: 'mp1', name: '희석된 MP 포션', grade: '희석', tier: 1, mp: 50, price: 30 },
+            { id: 'mp2', name: '약한 MP 포션', grade: '약함', tier: 2, mp: 140, price: 90 },
+            { id: 'mp3', name: '농축된 MP 포션', grade: '농축', tier: 3, mp: 350, price: 300 },
+            { id: 'mp4', name: '고농축 MP 포션', grade: '고농축', tier: 4, mp: 900, price: 1200 },
+            { id: 'mp5', name: '극농축 MP 포션', grade: '극농축', tier: 5, mp: 2500, price: 7000 },
+            { id: 'mp6', name: '순수한 마나수', grade: '순수', tier: 6, mp: 10000, price: 0 }
         ]
     },
 
@@ -145,14 +149,14 @@ const GAME_DATA = {
         'r_w6': { id: 'r_w6', name: '혼돈의 파괴자 레시피', targetId: 'w6', category: 'WEAPONS' },
         'r_a6': { id: 'r_a6', name: '심연의 갑주 레시피', targetId: 'a6', category: 'ARMORS' },
         'r_p6': { id: 'r_p6', name: '순수한 생명수 레시피', targetId: 'p6', category: 'CONSUMABLES' },
-        'r_mp2': { id: 'r_mp2', name: '순수한 마나수 레시피', targetId: 'mp2', category: 'CONSUMABLES' }
+        'r_mp6': { id: 'r_mp6', name: '순수한 마나수 레시피', targetId: 'mp6', category: 'CONSUMABLES' }
     },
 
     CRAFTING: {
         'w6': { materials: { '용의 핵심': 10, '타락한 깃털': 50 }, gold: 500000 },
         'a6': { materials: { '용의 핵심': 8, '검은 성서': 60 }, gold: 500000 },
         'p6': { materials: { '공허의 정수': 5 }, gold: 100000 },
-        'mp2': { materials: { '공허의 정수': 5 }, gold: 100000 }
+        'mp6': { materials: { '공허의 정수': 5 }, gold: 100000 }
     },
 
     SKILLS: [
