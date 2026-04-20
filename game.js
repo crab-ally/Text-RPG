@@ -19,7 +19,10 @@ class Game {
                 inventory: [], skills: [], invMax: 10,       // 소지 아이템, 스킬, 가방 최대 칸수
                 defeatedMidBosses: {},                     // { zoneId: { defeated: bool, day: number } }
                 unlockedTowns: ['town1'],                  // 해금된 마을 리스트
-                monsterEncyclopedia: {}                    // 몬스터 도감 데이터
+                monsterEncyclopedia: {},                    // 몬스터 도감 데이터
+                unlockedRecipes: [],                        // 사용 완료된 레시피 (하얀색 표시)
+                discoveredRecipes: [],                      // 보유 중인 레시피 (노란색 표시)
+                materials: {}                               // 몬스터 전리품 인벤토리
             },
             world: {
                 currentLocation: 'town1', day: 1, inflation: 1.0, // 현재 장소, 날짜, 물가 상승률
@@ -258,8 +261,9 @@ class Game {
                 const it = p.inventory[i];
                 const plusText = it.plus > 0 ? ` +${it.plus}` : '';
                 const effectText = it.category === 'CONSUMABLES' ? `<span class="inv-item-effect">${it.hp ? 'H+' + it.hp : (it.mp ? 'M+' + it.mp : '')}</span>` : '';
+                const gradeClass = it.grade ? this.getGradeClass(it.grade) : '';
                 slot.innerHTML = `
-                    <span class="inv-item-name">${it.name}${plusText}</span>
+                    <span class="inv-item-name ${gradeClass}">${it.name}${plusText}</span>
                     ${effectText}
                     ${it.count > 1 ? `<span class="inv-item-count">${it.count}</span>` : ''}
                 `;
@@ -271,12 +275,23 @@ class Game {
         // 장착 장비 칸 업데이트
         const weapon = p.equipment.weapon;
         const armor = p.equipment.armor;
-        document.getElementById('slot-weapon').querySelector('.slot-item').innerText = weapon ? `${weapon.name} ${weapon.plus > 0 ? '+' + weapon.plus : ''}` : '-';
-        document.getElementById('slot-armor').querySelector('.slot-item').innerText = armor ? `${armor.name} ${armor.plus > 0 ? '+' + armor.plus : ''}` : '-';
+        
+        const setSlotItem = (elId, item) => {
+            const el = document.getElementById(elId).querySelector('.slot-item');
+            el.innerText = item ? `${item.name} ${item.plus > 0 ? '+' + item.plus : ''}` : '-';
+            el.className = 'slot-item'; 
+            if (item && item.grade) {
+                const gradeClass = this.getGradeClass(item.grade);
+                if (gradeClass) el.classList.add(gradeClass);
+            }
+        };
+
+        setSlotItem('slot-weapon', weapon);
+        setSlotItem('slot-armor', armor);
 
         p.equipment.accessory.forEach((acc, i) => {
-            const el = document.getElementById(`slot-accessory-${i + 1}`);
-            if (el) el.querySelector('.slot-item').innerText = acc ? `${acc.name} ${acc.plus > 0 ? '+' + acc.plus : ''}` : '-';
+            const elId = `slot-accessory-${i + 1}`;
+            setSlotItem(elId, acc);
         });
 
         // 저장 버튼 및 던전 카운터 노출 여부 관리 (마을에서만 저장 가능)
@@ -305,6 +320,20 @@ class Game {
         if (w.quest && (w.quest.day < curDay || (w.quest.townId !== townId && !w.quest.claimed))) {
             w.quest = null;
         }
+    }
+
+    /**
+     * 등급에 해당하는 CSS 클래스명을 반환합니다.
+     */
+    getGradeClass(grade) {
+        const mapping = {
+            '일반': 'grade-common', '고급': 'grade-high', '레어': 'grade-rare',
+            '영웅': 'grade-hero', '전설': 'grade-legend', '신화': 'grade-mythic',
+            '초월': 'grade-transcend', '희석': 'grade-common', '약함': 'grade-high',
+            '농축': 'grade-rare', '고농축': 'grade-hero', '극농축': 'grade-legend',
+            '순수': 'grade-mythic'
+        };
+        return mapping[grade] || '';
     }
 
     /**
@@ -483,6 +512,7 @@ class Game {
         else if (b === 'shop') this.openShop();
         else if (b === 'dungeon') this.enterDungeon();
         else if (b === 'blacksmith') this.openBlacksmith();
+        else if (b === 'alchemy') this.openAlchemyLab();
         else if (b === 'quest') this.openQuest();
         else this.log(`${this.getBuildingName(b)}은(는) 구현 중입니다.`, 'system');
     }
@@ -550,10 +580,11 @@ class Game {
                 h += `<h3>${title}</h3><div class="shop-grid">`;
                 items.filter(i => {
                     if (cat === 'CONSUMABLES') {
-                        // 상점에서는 최대 '상급'(Tier 4)까지만 판매
-                        return (i.tier || 0) <= Math.min(tier, 4);
+                        // 상점에서는 최대 '극농축'(Tier 5)까지만 판매, 신화/순수 등급 제외
+                        return (i.grade !== '순수') && (i.tier || 0) <= Math.min(tier, 5);
                     }
-                    return (i.tier || 0) <= tier;
+                    // 전설(Tier 5) 등급 까지만 판매, 신화(Tier 6) 이상 제외
+                    return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) <= Math.min(tier, 5);
                 }).forEach(it => {
                     const pr = Math.floor(it.price * inf);
                     const isBought = (cat !== 'CONSUMABLES' && this.purchasedInSession.has(it.id));
@@ -852,14 +883,45 @@ class Game {
         } else if (r < 0.7) {
             // 15% 확률로 보물상자 발견
             this.handleTreasureChest(dg, step);
-        } else if (r < 0.85) {
-            // 15% 확률로 무작위 이벤트 발생
+        } else if (r < 0.845) {
+            // 14.5% 확률로 무작위 이벤트 발생
             this.handleRandomEvent(dg, step);
+        } else if (r < 0.85) {
+            // 0.5% 확률로 초월 등급 장비 보스 조우 이벤트
+            this.handleTranscendenceEvent(dg, step);
         } else {
             // 15% 확률로 평화롭게 지나감
             this.log('길이 고요합니다. 아무 일도 일어나지 않았습니다.', 'system');
             this.exploreLoop(dg, step + 1);
         }
+    }
+
+    /**
+     * 초월 등급 이벤트: 해당 던전 보스급 몬스터와 전투 후 승리 시 초월 장비 획득
+     */
+    handleTranscendenceEvent(dg, step) {
+        this.log('!!! 차원이 뒤틀리며 강력한 기운이 뿜어져 나옵니다 !!!', 'death-notice');
+        this.log('초월의 수호자가 앞길을 가로막습니다.', 'system');
+        
+        // 보스 데이터를 기반으로 하되 능력치 +20% (초월급)
+        const pool = GAME_DATA.MONSTERS[dg.id];
+        const bossTemplate = pool.find(m => m.isBoss);
+        const m = { 
+            ...bossTemplate, 
+            name: `[초월] ${bossTemplate.name}`,
+            hp: Math.floor(bossTemplate.hp * 1.2),
+            hpMax: Math.floor(bossTemplate.hp * 1.2),
+            atk: Math.floor(bossTemplate.atk * 1.2),
+            xp: bossTemplate.xp * 2,
+            gold: bossTemplate.gold * 2,
+            isTranscendenceBoss: true 
+        };
+
+        this.currentBattle = { monster: m, isBoss: true, type: 'transcendence', step, dungeon: dg };
+        document.getElementById('monster-status').classList.remove('hidden');
+        document.getElementById('monster-name').innerHTML = `<span class="grade-transcend">${m.name}</span>`;
+        this.updateMonsterUI();
+        this.renderBattleActions();
     }
 
     /**
@@ -1124,7 +1186,37 @@ class Game {
             const curr = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
             const next = GAME_DATA.TOWNS[GAME_DATA.TOWNS.indexOf(curr) + 1];
             if (next && !p.unlockedTowns.includes(next.id)) { p.unlockedTowns.push(next.id); this.log(`${next.name} 해금!`, 'system'); }
+            
+            // 80레벨 이상 보스(Zone 4 이상) 처치 시 20% 확률로 레시피 드랍
+            if (curr.tier >= 4 && Math.random() < 0.2) {
+                this.handleRecipeDrop();
+            }
         }
+
+        // 초월 보스 처치 시 확정적으로 해당 던전 티어의 초월 장비 드랍
+        if (b.monster.isTranscendenceBoss) {
+            this.handleTranscendenceDrop(b.dungeon);
+        }
+
+        // 몬스터 전리품 획득 로직
+        if (m.loots && m.loots.length > 0) {
+            m.loots.forEach(lootName => {
+                if (Math.random() < 0.4) { // 40% 확률로 고유 전리품 획득
+                    if (p.inventory.length < p.invMax) {
+                        const existing = p.inventory.find(it => it.name === lootName && it.category === 'MATERIAL');
+                        if (existing) {
+                            existing.count = (existing.count || 1) + 1;
+                        } else {
+                            p.inventory.push({ name: lootName, category: 'MATERIAL', count: 1, price: (m.tier || 1) * 20 });
+                        }
+                        this.log(`전리품 <strong>[${lootName}]</strong>을(를) 획득했습니다.`, 'gain');
+                    } else {
+                        this.log(`전리품 ${lootName}을(를) 발견했지만 가방이 가득 찼습니다.`, 'lose');
+                    }
+                }
+            });
+        }
+
         this.updateUI();
 
         // 몬스터 처치 시 포션 드랍 로직 추가
@@ -1190,8 +1282,35 @@ class Game {
 
 
     /**
-     * 전투에서 도망칩니다. 50% 확률로 성공하며 실패 시 적에게 공격당합니다.
+     * 레시피 드랍 처리
      */
+    handleRecipeDrop() {
+        const p = this.gameState.player;
+        const recipeKeys = Object.keys(GAME_DATA.RECIPES);
+        const rKey = recipeKeys[Math.floor(Math.random() * recipeKeys.length)];
+        const recipe = GAME_DATA.RECIPES[rKey];
+
+        if (!p.discoveredRecipes.includes(rKey) && !p.unlockedRecipes.includes(rKey)) {
+            p.discoveredRecipes.push(rKey);
+            this.log(`역사적인 발견! <strong>[${recipe.name}]</strong>을(를) 획득했습니다.`, 'victory');
+        }
+    }
+
+    /**
+     * 초월 장비 드랍 처리
+     */
+    handleTranscendenceDrop(dg) {
+        const p = this.gameState.player;
+        const type = Math.random() < 0.5 ? 'WEAPONS' : 'ARMORS';
+        const item = GAME_DATA.ITEMS[type].find(i => i.grade === '초월');
+        
+        if (item && p.inventory.length < p.invMax) {
+            p.inventory.push({ ...item, category: type, count: 1, plus: 0 });
+            this.log(`!!! 천상의 기운이 서린 <strong>[${item.name}]</strong>을(를) 획득했습니다 !!!`, 'victory');
+        } else {
+            this.log('초월 장비를 발견했으나 가방이 가득 차 소실되었습니다!', 'death-notice');
+        }
+    }
     tryEscape() {
         if (Math.random() < 0.5) {
             this.log('탈출 성공!', 'system');
@@ -1207,42 +1326,70 @@ class Game {
     /**
      * 대장간 모달을 엽니다. 장착 중인 무기와 방어구 중 강화할 대상을 선택합니다.
      */
-    openBlacksmith() {
+    /**
+     * 대장간: 강화와 제작 탭을 제공합니다.
+     */
+    openBlacksmith(activeTab = 'reinforce') {
+        let h = `
+            <div class="building-tabs">
+                <button class="building-tab ${activeTab === 'reinforce' ? 'active' : ''}" onclick="game.openBlacksmith('reinforce')">장비 강화</button>
+                <button class="building-tab ${activeTab === 'craft' ? 'active' : ''}" onclick="game.openBlacksmith('craft')">장비 제작</button>
+            </div>
+            <div id="building-content">`;
+
+        if (activeTab === 'reinforce') {
+            h += this.getReinforceUI();
+        } else {
+            h += this.getCraftingUI('blacksmith');
+        }
+
+        h += '</div>';
+        this.showModal('대장간', h);
+    }
+
+    /**
+     * 연금술 실험실: 제작 기능만 제공합니다 (80레벨 이상 마을).
+     */
+    openAlchemyLab() {
+        const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
+        if (town.tier < 5) {
+            this.showModal('연금술 실험실', '<p>이 시설은 최소 단계 5 이상의 마을(Lv. 80+)에서만 이용 가능합니다.</p>');
+            return;
+        }
+
+        let h = `<div id="building-content">${this.getCraftingUI('alchemy')}</div>`;
+        this.showModal('연금술 실험실', h);
+    }
+
+    getReinforceUI() {
         const eq = this.gameState.player.equipment;
         const weapon = eq.weapon;
         const armor = eq.armor;
 
-        if (!weapon && !armor) {
-            this.showModal('대장간', '<p>강화할 장착 장비가 없습니다.</p>');
-            return;
-        }
+        if (!weapon && !armor) return '<p style="text-align:center; padding:20px; color:var(--text-dim);">강화할 장착 장비가 없습니다.</p>';
 
         let h = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid var(--border-color);">
                 <span style="color:var(--text-dim); font-size:0.85rem; font-weight:700;">보유 자금</span>
-                <span style="color:var(--gold-color); font-weight:700; font-family:'Orbitron', sans-serif; font-size:1.1rem;">${this.gameState.player.gold.toLocaleString()} G</span>
+                <span style="color:var(--gold-color); font-weight:700; font-family:\'Orbitron\', sans-serif; font-size:1.1rem;">${this.gameState.player.gold.toLocaleString()} G</span>
             </div>
             <div class="shop-grid">`;
+
         const renderEqRow = (it, type, label) => {
             if (!it) return;
             const plus = it.plus || 0;
             const cost = Math.floor(100 * (it.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
-
             let successRate = 0, downRate = 0, destroyRate = 0, failRate = 0;
 
-            if (plus < 4) {
-                // +4단계까지는 100% 성공
-                successRate = 100;
-            } else if (plus < 7) {
-                // +5 ~ +7 구간: 실패 및 하락 확률 존재
+            if (plus < 4) { successRate = 100; }
+            else if (plus < 7) {
                 successRate = plus === 4 ? 70 : (plus === 5 ? 50 : 35);
                 downRate = plus === 4 ? 10 : (plus === 5 ? 20 : 30);
                 failRate = 100 - successRate - downRate;
             } else {
-                // +8 ~ +10 구간: 파괴 확률 발생
                 successRate = plus === 7 ? 25 : (plus === 8 ? 15 : 8);
                 destroyRate = plus === 7 ? 20 : (plus === 8 ? 30 : 40);
-                downRate = 30; // 실패 시 하락 확률 상시 존재
+                downRate = 30;
                 failRate = 100 - successRate - destroyRate - downRate;
             }
 
@@ -1250,39 +1397,191 @@ class Game {
                 if (!it[statKey]) return '';
                 const cur = Math.floor(it[statKey] * Math.pow(1.15, plus));
                 const next = Math.floor(it[statKey] * Math.pow(1.15, plus + 1));
-                return `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span> <span style="color:var(--gold-color); font-size:0.7rem;">(+${next - cur})</span></div>`;
+                return `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span></div>`;
             };
-
-            let probHtml = `<div style="font-size:0.7rem; display:flex; gap:10px; margin-top:5px; flex-wrap:wrap; font-family:'Orbitron', sans-serif;">
-                <span style="color:var(--accent-cyan)">성공: ${successRate}%</span>
-                ${downRate > 0 ? `<span style="color:#ff884d">하락: ${downRate}%</span>` : ''}
-                ${destroyRate > 0 ? `<span style="color:#ff4d4d; font-weight:700;">파괴: ${destroyRate}%</span>` : ''}
-                ${failRate > 0 ? `<span style="color:var(--text-dim)">유지: ${failRate}%</span>` : ''}
-            </div>`;
 
             h += `
                 <div class="shop-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
-                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                        <span class="shop-item-name">${label}: ${it.name} +${plus}</span>
-                        <span class="shop-item-price">${cost.toLocaleString()} G</span>
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <span class="shop-item-name ${this.getGradeClass(it.grade)}">${label}: ${it.name} +${plus}</span>
+                        <span class="shop-item-price">${cost.toLocaleString()}G</span>
                     </div>
-                    <div style="font-size:0.8rem; width:100%; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
-                        ${getStatPreview('atk', '공격력')}
-                        ${getStatPreview('def', '방어력')}
+                    <div style="font-size:0.8rem; width:100%; color:var(--text-dim);">
+                        ${getStatPreview('atk', '공격력')} ${getStatPreview('def', '방어력')}
                     </div>
-                    ${probHtml}
-                    <div style="display:flex; justify-content:flex-end; width:100%; margin-top:5px;">
-                        <button onclick="game.reinforce('${type}')">강화</button>
+                    <div style="font-size:0.7rem; display:flex; gap:10px;">
+                        <span style="color:var(--accent-cyan)">성공: ${successRate}%</span>
+                        ${downRate > 0 ? `<span style="color:#ff884d">하락: ${downRate}%</span>` : ''}
+                        ${destroyRate > 0 ? `<span style="color:#ff4d4d">파괴: ${destroyRate}%</span>` : ''}
                     </div>
+                    <button style="width:100%; margin-top:5px;" onclick="game.reinforce('${type}')">강화 시도</button>
                 </div>
             `;
         };
-
         renderEqRow(weapon, 'weapon', '무기');
         renderEqRow(armor, 'armor', '방어구');
-        h += '</div>';
+        return h + '</div>';
+    }
 
-        this.showModal('대장간', h);
+    /**
+     * 제작 UI 생성 (두 칸 구성)
+     */
+    getCraftingUI(type) {
+        const p = this.gameState.player;
+        const category = type === 'blacksmith' ? ['WEAPONS', 'ARMORS'] : ['CONSUMABLES'];
+        
+        // 해당 카테고리에 속한 모든 제작 아이템(신화/순수 등) 리스트
+        const items = [];
+        category.forEach(cat => {
+            GAME_DATA.ITEMS[cat].forEach(it => {
+                if (it.grade === '신화' || it.grade === '순수') {
+                    items.push({ ...it, cat });
+                }
+            });
+        });
+
+        let listHtml = '';
+        items.forEach(it => {
+            let stateClass = ''; // Default Gray
+            const recipeKey = 'r_' + it.id;
+            if (p.unlockedRecipes.includes(recipeKey)) stateClass = 'unlocked'; // White
+            else if (p.discoveredRecipes.includes(recipeKey)) stateClass = 'has-item'; // Yellow
+
+            listHtml += `<button class="crafting-item-btn ${stateClass}" onclick="game.selectCraftItem('${it.id}', '${type}')">${it.name}</button>`;
+        });
+
+        return `
+            <div class="crafting-container">
+                <div class="crafting-list">${listHtml}</div>
+                <div id="crafting-detail-pane" class="crafting-detail">
+                    <div class="crafting-empty-state">왼쪽 리스트에서 아이템을 선택하십시오.</div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * 제작 아이템 상세 정보 표시
+     */
+    selectCraftItem(id, type) {
+        const p = this.gameState.player;
+        const cat = type === 'blacksmith' ? (id.startsWith('w') ? 'WEAPONS' : 'ARMORS') : 'CONSUMABLES';
+        const it = GAME_DATA.ITEMS[cat].find(i => i.id === id);
+        const craftData = GAME_DATA.CRAFTING[id];
+        const recipeKey = 'r_' + id;
+
+        const isDiscovered = p.discoveredRecipes.includes(recipeKey);
+        const isUnlocked = p.unlockedRecipes.includes(recipeKey);
+
+        let h = `
+            <div class="crafting-header">
+                <div class="crafting-name ${this.getGradeClass(it.grade)}">${it.name}</div>
+                <div class="crafting-desc">${it.atk ? '공격력 +' + it.atk : (it.def ? '방어력 +' + it.def : '효과: HP ' + it.hp + ' 회복')}</div>
+            </div>
+            <div class="materials-section">
+                <h4 style="margin-bottom:10px; font-size:0.85rem; color:var(--text-dim);">필요 재료</h4>
+                <div class="materials-list">
+        `;
+
+        let canCraft = isUnlocked && p.gold >= (craftData.gold || 0);
+        
+        const getOwnedCount = (mName) => {
+            const item = p.inventory.find(it => it.name === mName && it.category === 'MATERIAL');
+            return item ? (item.count || 1) : 0;
+        };
+
+        if (craftData.materials) {
+            for (const [matName, needed] of Object.entries(craftData.materials)) {
+                const owned = getOwnedCount(matName);
+                const suffice = owned >= needed;
+                if (!suffice) canCraft = false;
+                h += `
+                    <div class="material-item ${suffice ? 'sufficient' : 'lacking'}">
+                        <span>${matName}</span>
+                        <span>${owned} / ${needed}</span>
+                    </div>
+                `;
+            }
+        }
+
+        h += `
+            <div class="material-item ${p.gold >= (craftData.gold || 0) ? 'sufficient' : 'lacking'}">
+                <span>필요 골드</span>
+                <span>${p.gold.toLocaleString()} / ${(craftData.gold || 0).toLocaleString()} G</span>
+            </div>
+        `;
+
+        h += `</div></div><div class="crafting-footer">`;
+
+        if (isUnlocked) {
+            h += `<button onclick="game.craftItem('${id}', '${type}')" ${canCraft ? '' : 'disabled'}>아이템 제작</button>`;
+        } else if (isDiscovered) {
+            h += `<button class="secondary" onclick="game.useRecipe('${recipeKey}', '${type}')">레시피 사용</button>`;
+        } else {
+            h += `<p style="font-size:0.8rem; color:var(--hp-color);">레시피가 필요합니다.</p>`;
+        }
+
+        h += `</div>`;
+
+        const pane = document.getElementById('crafting-detail-pane');
+        pane.innerHTML = h;
+        
+        // 버튼 활성화 상태 시각화
+        const btns = document.querySelectorAll('.crafting-item-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    }
+
+    useRecipe(rKey, type) {
+        const p = this.gameState.player;
+        const idx = p.discoveredRecipes.indexOf(rKey);
+        if (idx > -1) {
+            p.discoveredRecipes.splice(idx, 1);
+            p.unlockedRecipes.push(rKey);
+            this.log('레시피를 습득하여 이제 해당 아이템을 제작할 수 있습니다!', 'gain');
+            if (type === 'blacksmith') this.openBlacksmith('craft');
+            else this.openAlchemyLab();
+        }
+    }
+
+    craftItem(id, type) {
+        const p = this.gameState.player;
+        const craftData = GAME_DATA.CRAFTING[id];
+        const cat = type === 'blacksmith' ? (id.startsWith('w') ? 'WEAPONS' : 'ARMORS') : 'CONSUMABLES';
+        const itData = GAME_DATA.ITEMS[cat].find(i => i.id === id);
+
+        const getOwnedCount = (mName) => {
+            const item = p.inventory.find(it => it.name === mName && it.category === 'MATERIAL');
+            return item ? (item.count || 1) : 0;
+        };
+
+        // 최종 검증
+        if (p.gold < (craftData.gold || 0)) return;
+        if (craftData.materials) {
+            for (const [matName, needed] of Object.entries(craftData.materials)) {
+                if (getOwnedCount(matName) < needed) return;
+            }
+        }
+        if (p.inventory.length >= p.invMax) { alert('가방 가득 참'); return; }
+
+        // 소비
+        p.gold -= (craftData.gold || 0);
+        if (craftData.materials) {
+            for (const [matName, needed] of Object.entries(craftData.materials)) {
+                const invIdx = p.inventory.findIndex(it => it.name === matName && it.category === 'MATERIAL');
+                const item = p.inventory[invIdx];
+                item.count -= needed;
+                if (item.count <= 0) p.inventory.splice(invIdx, 1);
+            }
+        }
+
+        // 획득
+        p.inventory.push({ ...itData, category: cat, count: 1, plus: 0 });
+        this.log(`성공적으로 <strong>[${itData.name}]</strong>을(를) 제작하였습니다!`, 'reinforce-success');
+        
+        this.updateUI();
+        if (type === 'blacksmith') this.openBlacksmith('craft');
+        else this.openAlchemyLab();
     }
 
     /**

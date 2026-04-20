@@ -1040,3 +1040,170 @@ body.menu-open {
     border-radius: 5px;
     box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
 }
+
+/* Crafting & Building Tabs UI */
+.building-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    background: rgba(0,0,0,0.3);
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.building-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: var(--transition);
+    border-radius: 6px;
+}
+
+.building-tab.active {
+    background: var(--accent-purple);
+    color: white;
+    box-shadow: 0 0 15px rgba(123, 79, 255, 0.4);
+}
+
+/* Crafting Layout: List on Left, Detail on Right */
+.crafting-container {
+    display: flex;
+    gap: 15px;
+    height: 450px;
+    min-height: 400px;
+}
+
+.crafting-list {
+    flex: 0 0 180px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.crafting-item-btn {
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: var(--transition);
+    color: #666; /* Default: Gray (No recipe) */
+}
+
+.crafting-item-btn.has-item {
+    color: var(--gold-color); /* Discovery: Yellow */
+    border-color: var(--gold-color);
+}
+
+.crafting-item-btn.unlocked {
+    color: #fff; /* Unlocked: White */
+    border-color: var(--accent-cyan);
+}
+
+.crafting-item-btn:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.crafting-item-btn.active {
+    background: rgba(123, 79, 255, 0.15);
+    border-color: var(--accent-purple);
+}
+
+.crafting-detail {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: relative;
+    overflow-y: auto;
+}
+
+.crafting-empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+.crafting-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+
+.crafting-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.crafting-desc {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+}
+
+.materials-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.material-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.material-item.lacking {
+    color: #ff4d4d;
+}
+
+.material-item.sufficient {
+    color: #4dff88;
+}
+
+.crafting-footer {
+    margin-top: auto;
+    padding-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Grade-based Colors */
+.grade-common { color: #ffffff; }
+.grade-high { color: #1eff00; text-shadow: 0 0 5px rgba(30, 255, 0, 0.3); }
+.grade-rare { color: #0070dd; text-shadow: 0 0 5px rgba(0, 112, 221, 0.3); }
+.grade-hero { color: #a335ee; text-shadow: 0 0 8px rgba(163, 53, 238, 0.4); }
+.grade-legend { color: #ff8000; text-shadow: 0 0 10px rgba(255, 128, 0, 0.5); }
+.grade-mythic { color: #ff0000; text-shadow: 0 0 12px rgba(255, 0, 0, 0.6); font-weight: 700; }
+.grade-transcend { color: #00f2ff; text-shadow: 0 0 15px rgba(0, 242, 255, 0.7); font-weight: 800; animation: pulseCyan 2s infinite; }
+
+@keyframes pulseCyan {
+    0% { opacity: 0.8; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+    50% { opacity: 1; text-shadow: 0 0 20px rgba(0, 242, 255, 0.9); }
+    100% { opacity: 0.8; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+}
