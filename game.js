@@ -657,6 +657,7 @@ class Game {
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <span class="shop-item-price">${unitPrice.toLocaleString()}G</span>
                                 <button onclick="game.sellItem(${idx})">판매</button>
+                                <button onclick="game.sellItemStack(${idx})">일괄 판매</button>
                             </div>
                         </div>`;
                 });
@@ -699,6 +700,24 @@ class Game {
         this.log(`${it.name}을(를) 1개 판매했습니다. (${price} G 획득)`, 'gain');
         this.updateUI();
         this.openShop('sell'); // 판매 후 목록 갱신을 위해 판매 탭 다시 열기
+    }
+
+    /**
+     * 인벤토리의 특정 항목(스택)을 한 번에 모두 판매합니다.
+     */
+    sellItemStack(idx) {
+        const p = this.gameState.player;
+        const it = p.inventory[idx];
+        if (!it) return;
+
+        const count = it.count || 1;
+        const totalPrice = this.calculateSellPrice(it);
+        p.gold += totalPrice;
+        p.inventory.splice(idx, 1);
+
+        this.log(`${it.name} ${count}개를 일괄 판매했습니다. (${totalPrice.toLocaleString()} G 획득)`, 'gain');
+        this.updateUI();
+        this.openShop('sell');
     }
 
     /**
