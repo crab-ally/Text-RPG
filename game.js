@@ -423,7 +423,7 @@ class Game {
     }
 
     /**
-     * 마을 메인 행동 메뉴 렌더링 (던전 입장 / 마을 활동 / 다른 마을 이동)
+     * 마을 메인 행동 메뉴 렌더링 (던전 입장 / 의뢰소 / 마을 활동 / 다른 마을 이동)
      * 현재 위치를 기반으로 상호작용 가능한 버튼들을 화면에 표시합니다.
      */
     renderTownActions() {
@@ -439,13 +439,19 @@ class Game {
         dgBtn.onclick = () => this.enterDungeon();
         panel.appendChild(dgBtn);
 
-        // 2. 마을 활동 버튼 (상점, 여관 등 내부 시설 목록으로 전환)
+        // 2. 의뢰소 버튼
+        const questBtn = document.createElement('button');
+        questBtn.innerText = '의뢰소';
+        questBtn.onclick = () => this.openQuest();
+        panel.appendChild(questBtn);
+
+        // 3. 마을 활동 버튼 (상점, 여관 등 내부 시설 목록으로 전환)
         const townBtn = document.createElement('button');
         townBtn.innerText = '마을 활동';
         townBtn.onclick = () => this.renderBuildingActions();
         panel.appendChild(townBtn);
 
-        // 3. 해금된 다른 마을로의 이동 버튼들
+        // 4. 해금된 다른 마을로의 이동 버튼들
         GAME_DATA.TOWNS.forEach(t => {
             if (t.id !== w.currentLocation && p.unlockedTowns.includes(t.id)) {
                 const btn = document.createElement('button');
@@ -469,7 +475,7 @@ class Game {
         panel.innerHTML = '';
 
         // 건물 정렬 순서 정의
-        const order = ['inn', 'shop', 'blacksmith', 'alchemy', 'training', 'antique', 'quest', 'donation'];
+        const order = ['inn', 'shop', 'blacksmith', 'alchemy', 'training', 'antique', 'donation'];
 
         order.forEach(b => {
             const isUnlocked = town.buildings.includes(b);
@@ -1731,7 +1737,7 @@ class Game {
             if (potion) {
                 reward = {
                     rewardType: 'potion',
-                    amount: Math.floor(Math.random() * 3) + 1,
+                    amount: Math.floor(Math.random() * 3) + 1, // 1 ~ 3개
                     category: 'CONSUMABLES',
                     id: potion.id,
                     name: potion.name,
