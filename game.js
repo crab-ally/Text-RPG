@@ -275,11 +275,11 @@ class Game {
         // 장착 장비 칸 업데이트
         const weapon = p.equipment.weapon;
         const armor = p.equipment.armor;
-        
+
         const setSlotItem = (elId, item) => {
             const el = document.getElementById(elId).querySelector('.slot-item');
             el.innerText = item ? `${item.name} ${item.plus > 0 ? '+' + item.plus : ''}` : '-';
-            el.className = 'slot-item'; 
+            el.className = 'slot-item';
             if (item && item.grade) {
                 const gradeClass = this.getGradeClass(item.grade);
                 if (gradeClass) el.classList.add(gradeClass);
@@ -901,19 +901,19 @@ class Game {
     handleTranscendenceEvent(dg, step) {
         this.log('!!! 차원이 뒤틀리며 강력한 기운이 뿜어져 나옵니다 !!!', 'death-notice');
         this.log('초월의 수호자가 앞길을 가로막습니다.', 'system');
-        
+
         // 보스 데이터를 기반으로 하되 능력치 +20% (초월급)
         const pool = GAME_DATA.MONSTERS[dg.id];
         const bossTemplate = pool.find(m => m.isBoss);
-        const m = { 
-            ...bossTemplate, 
+        const m = {
+            ...bossTemplate,
             name: `[초월] ${bossTemplate.name}`,
             hp: Math.floor(bossTemplate.hp * 1.2),
             hpMax: Math.floor(bossTemplate.hp * 1.2),
             atk: Math.floor(bossTemplate.atk * 1.2),
             xp: bossTemplate.xp * 2,
             gold: bossTemplate.gold * 2,
-            isTranscendenceBoss: true 
+            isTranscendenceBoss: true
         };
 
         this.currentBattle = { monster: m, isBoss: true, type: 'transcendence', step, dungeon: dg };
@@ -1043,8 +1043,8 @@ class Game {
         // 10% 확률로 특수한 능력치를 가진 뮤턴트 몬스터 출현
         if (type === 'normal' && !isB && Math.random() < 0.1) {
             const mut = GAME_DATA.MUTANTS[Math.floor(Math.random() * GAME_DATA.MUTANTS.length)];
-            m.name = mut.prefix + ' ' + m.name; 
-            if (mut.hpMult) m.hp *= mut.hpMult; 
+            m.name = mut.prefix + ' ' + m.name;
+            if (mut.hpMult) m.hp *= mut.hpMult;
             if (mut.atkMult) m.atk *= mut.atkMult;
             if (mut.goldMult) m.gold *= mut.goldMult;
         }
@@ -1147,7 +1147,7 @@ class Game {
         if (!b || !b.monster) return;
 
         const m = b.monster;
-        const xp = m.xp || 0; 
+        const xp = m.xp || 0;
         const g = Math.floor((m.gold || 0) * 1.3); // 몬스터 사냥 골드 30% 상향 (기존 20%에서 추가 상향)
         p.xp += xp; p.gold += g;
 
@@ -1185,7 +1185,7 @@ class Game {
             const curr = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
             const next = GAME_DATA.TOWNS[GAME_DATA.TOWNS.indexOf(curr) + 1];
             if (next && !p.unlockedTowns.includes(next.id)) { p.unlockedTowns.push(next.id); this.log(`${next.name} 해금!`, 'system'); }
-            
+
             // 80레벨 이상 보스(Zone 4 이상) 처치 시 20% 확률로 레시피 드랍
             if (curr.tier >= 4 && Math.random() < 0.2) {
                 this.handleRecipeDrop();
@@ -1229,7 +1229,7 @@ class Game {
         const p = this.gameState.player;
         const b = battle;
         const tier = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).tier;
-        
+
         let dropChance = 0.05; // 일반 몬스터 5%
         if (b.type === 'mid' || b.type === 'mid_sequential') dropChance = 0.25; // 중간 보스 25%
         else if (b.isBoss || b.type === 'boss') dropChance = 0.6; // 최종 보스 60%
@@ -1302,7 +1302,7 @@ class Game {
         const p = this.gameState.player;
         const type = Math.random() < 0.5 ? 'WEAPONS' : 'ARMORS';
         const item = GAME_DATA.ITEMS[type].find(i => i.grade === '초월');
-        
+
         if (item && p.inventory.length < p.invMax) {
             p.inventory.push({ ...item, category: type, count: 1, plus: 0 });
             this.log(`!!! 천상의 기운이 서린 <strong>[${item.name}]</strong>을(를) 획득했습니다 !!!`, 'victory');
@@ -1428,7 +1428,7 @@ class Game {
     getCraftingUI(type) {
         const p = this.gameState.player;
         const category = type === 'blacksmith' ? ['WEAPONS', 'ARMORS'] : ['CONSUMABLES'];
-        
+
         // 해당 카테고리에 속한 모든 제작 아이템(신화/순수 등) 리스트
         const items = [];
         category.forEach(cat => {
@@ -1483,7 +1483,7 @@ class Game {
         `;
 
         let canCraft = isUnlocked && p.gold >= (craftData.gold || 0);
-        
+
         const getOwnedCount = (mName) => {
             const item = p.inventory.find(it => it.name === mName && it.category === 'MATERIAL');
             return item ? (item.count || 1) : 0;
@@ -1524,7 +1524,7 @@ class Game {
 
         const pane = document.getElementById('crafting-detail-pane');
         pane.innerHTML = h;
-        
+
         // 버튼 활성화 상태 시각화
         const btns = document.querySelectorAll('.crafting-item-btn');
         btns.forEach(b => b.classList.remove('active'));
@@ -1577,7 +1577,7 @@ class Game {
         // 획득
         p.inventory.push({ ...itData, category: cat, count: 1, plus: 0 });
         this.log(`성공적으로 <strong>[${itData.name}]</strong>을(를) 제작하였습니다!`, 'reinforce-success');
-        
+
         this.updateUI();
         if (type === 'blacksmith') this.openBlacksmith('craft');
         else this.openAlchemyLab();
@@ -1686,10 +1686,10 @@ class Game {
                     </div>
 
                     <div style="margin-top:25px; display:flex; gap:10px;">
-                        ${q.completed ? 
-                            `<button onclick="game.claimQuestReward()" ${q.claimed ? 'disabled' : ''}>${q.claimed ? '지급 완료' : '보상 받기'}</button>` : 
-                            `<p style="color:var(--text-dim); font-size:0.85rem;">* 던전에서 목표 몬스터를 처치하십시오. 보상 수령은 마을 의뢰소에서만 가능합니다.</p>`
-                        }
+                        ${q.completed ?
+                    `<button onclick="game.claimQuestReward()" ${q.claimed ? 'disabled' : ''}>${q.claimed ? '지급 완료' : '보상 받기'}</button>` :
+                    `<p style="color:var(--text-dim); font-size:0.85rem;">* 던전에서 목표 몬스터를 처치하십시오. 보상 수령은 마을 의뢰소에서만 가능합니다.</p>`
+                }
                     </div>
                 </div>
             `;
@@ -1707,15 +1707,15 @@ class Game {
         const townId = w.currentLocation;
         const dungeon = GAME_DATA.TOWNS.find(t => t.id === townId).dungeon;
         const monsters = GAME_DATA.MONSTERS[dungeon.id].filter(m => !m.isBoss && !m.isMidBoss);
-        
+
         if (monsters.length === 0) {
             this.log('이 지역에는 의뢰 대상 몬스터가 없습니다.', 'system');
             return;
         }
 
         const m = monsters[Math.floor(Math.random() * monsters.length)];
-        const targetCount = 2 + Math.floor(Math.random() * 3); // 2 ~ 4마리
-        
+        const targetCount = 2 + Math.floor(Math.random() * 2); // 2 ~ 3마리
+
         // 보상 결정 (골드 또는 포션). rewardType으로 구분해 소모품 스프레드와 키가 겹치지 않게 함.
         const isGold = Math.random() < 0.5;
         const goldAmount = () => Math.max(1, Math.floor((m.gold || 0) * targetCount * 1.7));
