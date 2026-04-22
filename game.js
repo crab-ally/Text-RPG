@@ -456,7 +456,8 @@ class Game {
             if (t.id !== w.currentLocation && p.unlockedTowns.includes(t.id)) {
                 const btn = document.createElement('button');
                 btn.className = 'secondary';
-                btn.innerText = `이동: ${t.name}`;
+                const minLevel = Number.parseInt((t.levelRange || '').match(/\d+/)?.[0] || '1', 10);
+                btn.innerText = `이동: Lv${minLevel} ${t.name}`;
                 btn.onclick = () => this.travelTo(t.id);
                 panel.appendChild(btn);
             }
