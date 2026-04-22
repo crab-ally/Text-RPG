@@ -1411,9 +1411,9 @@ class Game {
                 downRate = plus === 4 ? 10 : (plus === 5 ? 20 : 30);
                 failRate = 100 - successRate - downRate;
             } else {
-                successRate = plus === 7 ? 25 : (plus === 8 ? 15 : 8);
-                destroyRate = plus === 7 ? 20 : (plus === 8 ? 30 : 40);
-                downRate = 30;
+                successRate = plus === 7 ? 30 : (plus === 8 ? 20 : 12);
+                downRate = plus === 7 ? 25 : (plus === 8 ? 30 : 35);
+                destroyRate = plus === 7 ? 15 : (plus === 8 ? 20 : 25);
                 failRate = 100 - successRate - destroyRate - downRate;
             }
 
@@ -1639,9 +1639,9 @@ class Game {
             else result = 'fail';
         } else {
             // +8 ~ +10 구간: 파괴 확률 발생
-            const successRate = plus === 7 ? 25 : (plus === 8 ? 15 : 8);
-            const destroyRate = plus === 7 ? 20 : (plus === 8 ? 30 : 40);
-            const downRate = 30; // 실패 시 하락 확률 상시 존재
+            const successRate = plus === 7 ? 30 : (plus === 8 ? 20 : 12);
+            const downRate = plus === 7 ? 25 : (plus === 8 ? 30 : 35);
+            const destroyRate = plus === 7 ? 15 : (plus === 8 ? 20 : 25);
             if (r < successRate) result = 'success';
             else if (r < successRate + destroyRate) result = 'destroy';
             else if (r < successRate + destroyRate + downRate) result = 'down';
