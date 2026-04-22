@@ -1337,7 +1337,7 @@ class Game {
         }
     }
     tryEscape() {
-        if (Math.random() < 0.5) {
+        if (this.currentBattle.monster.isTranscendenceBoss || Math.random() < 0.5) { //초월 몬스터는 100% 도망 가능
             this.log('탈출 성공!', 'system');
             document.body.classList.remove('in-dungeon');
             document.getElementById('monster-status').classList.add('hidden');
