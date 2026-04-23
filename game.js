@@ -12,7 +12,7 @@ class Game {
          */
         this.gameState = {
             player: {
-                level: 1, xp: 0, xpNext: 70,               // 레벨 및 경험치 시스템 (80 -> 70 하향)
+                level: 1, xp: 0, xpNext: 70,               // 레벨 및 경험치 시스템
                 hp: 100, hpMax: 100, mp: 50, mpMax: 50,    // 생명력 및 마력
                 atk: 10, def: 5, cri: 5, eva: 5, gold: 500, // 전투 스탯 및 재화
                 equipment: { weapon: null, armor: null, accessory: [null, null, null] }, // 장착 장비
@@ -1157,10 +1157,13 @@ class Game {
             this.updateUI();
             return;
         }
-
         // 몬스터의 반격
-        let md = Math.max(1, m.atk - p.def); p.hp -= md; this.log(`${m.name}의 공격! ${md} 피해.`, 'lose');
-        if (p.hp <= 0) this.death();
+        if (Math.random() < (p.eva || 0) / 100) {
+            this.log(`${m.name}의 공격을 신속하게 회피했습니다!`, 'system');
+        } else {
+            let md = Math.max(1, m.atk - p.def); p.hp -= md; this.log(`${m.name}의 공격! ${md} 피해.`, 'lose');
+            if (p.hp <= 0) this.death();
+        }
         this.updateUI();
     }
 
