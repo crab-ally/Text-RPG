@@ -1411,8 +1411,8 @@ class Game {
 
             if (plus < 4) { successRate = 100; }
             else if (plus < 7) {
-                successRate = plus === 4 ? 70 : (plus === 5 ? 50 : 35);
-                downRate = plus === 4 ? 10 : (plus === 5 ? 20 : 30);
+                successRate = plus === 4 ? 75 : (plus === 5 ? 55 : 40);
+                downRate = plus === 4 ? 5 : (plus === 5 ? 15 : 25);
                 failRate = 100 - successRate - downRate;
             } else {
                 successRate = plus === 7 ? 30 : (plus === 8 ? 20 : 12);
@@ -1636,8 +1636,8 @@ class Game {
             result = 'success';
         } else if (plus < 7) {
             // +5 ~ +7 구간: 실패 및 하락 확률 존재
-            const successRate = plus === 4 ? 70 : (plus === 5 ? 50 : 35);
-            const downRate = plus === 4 ? 10 : (plus === 5 ? 20 : 30);
+            const successRate = plus === 4 ? 75 : (plus === 5 ? 55 : 40);
+            const downRate = plus === 4 ? 5 : (plus === 5 ? 15 : 25);
             if (r < successRate) result = 'success';
             else if (r < successRate + downRate) result = 'down';
             else result = 'fail';
