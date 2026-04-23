@@ -207,7 +207,7 @@ class Game {
         const log = document.getElementById('game-log');
         const entry = document.createElement('div');
         entry.className = `log-entry ${type}`;
-        entry.innerHTML = `[${new Date().toLocaleTimeString('ko-KR', { hour12: false })}] ${msg}`;
+        entry.innerHTML = `${msg}`;
         log.appendChild(entry);
         log.scrollTop = log.scrollHeight;
         // 로그 개수 제한하여 성능 최적화
