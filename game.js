@@ -1286,7 +1286,7 @@ class Game {
      * 레벨 업을 처리합니다. 최대 체력/마력이 상승하고 즉시 회복됩니다.
      */
     levelUp() {
-        const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.3); // 증가율 1.4 -> 1.3 하향
+        const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.15);
         p.hpMax += 20; p.mpMax += 10; p.hp = p.hpMax; p.mp = p.mpMax; this.updateStats();
         this.log(`LEVEL UP! ${p.level} 레벨 달성!`, 'system');
     }
