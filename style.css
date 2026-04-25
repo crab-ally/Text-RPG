@@ -1,19 +1,33 @@
 /* 전역 스타일 변수 및 테마 설정 */
 :root {
-    --bg-darker: #05060f;     /* 가장 어두운 배경색 */
-    --bg-main: #0a0b1e;       /* 메인 배경색 */
-    --bg-card: #15162c;       /* 카드/패널 배경색 */
-    --accent-purple: #7b4fff;  /* 주요 강조색 (보라) */
-    --accent-cyan: #00f2ff;    /* 부차 강조색 (사이언) */
-    --text-main: #e0e0f0;     /* 기본 텍스트 색상 */
-    --text-dim: #9090a0;      /* 흐린 텍스트 색상 */
-    --hp-color: #ff4d4d;      /* 체력 바 색상 */
-    --mp-color: #4d94ff;      /* 마력 바 색상 */
-    --xp-color: #ffcc00;      /* 경험치 바 색상 */
-    --gold-color: #ffd700;    /* 골드 표시 색상 */
-    --border-color: #2a2b45;  /* 테두리 색상 */
-    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* 카드 그림자 효과 */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 공통 전환 효과 */
+    --bg-darker: #05060f;
+    /* 가장 어두운 배경색 */
+    --bg-main: #0a0b1e;
+    /* 메인 배경색 */
+    --bg-card: #15162c;
+    /* 카드/패널 배경색 */
+    --accent-purple: #7b4fff;
+    /* 주요 강조색 (보라) */
+    --accent-cyan: #00f2ff;
+    /* 부차 강조색 (사이언) */
+    --text-main: #e0e0f0;
+    /* 기본 텍스트 색상 */
+    --text-dim: #9090a0;
+    /* 흐린 텍스트 색상 */
+    --hp-color: #ff4d4d;
+    /* 체력 바 색상 */
+    --mp-color: #4d94ff;
+    /* 마력 바 색상 */
+    --xp-color: #ffcc00;
+    /* 경험치 바 색상 */
+    --gold-color: #ffd700;
+    /* 골드 표시 색상 */
+    --border-color: #2a2b45;
+    /* 테두리 색상 */
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    /* 카드 그림자 효과 */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 공통 전환 효과 */
 }
 
 
@@ -372,7 +386,8 @@ body {
     gap: 8px;
     scrollbar-width: thin;
     scrollbar-color: var(--accent-purple) transparent;
-    border-left: 4px solid var(--accent-purple); /* 로그 가독성을 위한 좌측 강조 선 */
+    border-left: 4px solid var(--accent-purple);
+    /* 로그 가독성을 위한 좌측 강조 선 */
 }
 
 
@@ -414,9 +429,19 @@ body {
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
 }
 
 .log-entry.crit {
@@ -866,8 +891,15 @@ button.secondary {
 }
 
 @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .hidden {
@@ -1048,7 +1080,7 @@ body.menu-open {
     display: flex;
     gap: 5px;
     margin-bottom: 15px;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
     padding: 5px;
     border-radius: 8px;
 }
@@ -1082,7 +1114,7 @@ body.menu-open {
 
 .crafting-list {
     flex: 0 0 180px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     overflow-y: auto;
@@ -1096,27 +1128,30 @@ body.menu-open {
     width: 100%;
     text-align: left;
     padding: 12px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 6px;
     font-size: 0.8rem;
     cursor: pointer;
     transition: var(--transition);
-    color: #666; /* Default: Gray (No recipe) */
+    color: #666;
+    /* Default: Gray (No recipe) */
 }
 
 .crafting-item-btn.has-item {
-    color: var(--gold-color); /* Discovery: Yellow */
+    color: var(--gold-color);
+    /* Discovery: Yellow */
     border-color: var(--gold-color);
 }
 
 .crafting-item-btn.unlocked {
-    color: #fff; /* Unlocked: White */
+    color: #fff;
+    /* Unlocked: White */
     border-color: var(--accent-cyan);
 }
 
 .crafting-item-btn:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .crafting-item-btn.active {
@@ -1126,7 +1161,7 @@ body.menu-open {
 
 .crafting-detail {
     flex: 1;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 20px;
@@ -1175,7 +1210,7 @@ body.menu-open {
     display: flex;
     justify-content: space-between;
     padding: 8px 12px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
     font-size: 0.85rem;
 }
@@ -1196,16 +1231,187 @@ body.menu-open {
 }
 
 /* Grade-based Colors */
-.grade-common { color: #ffffff; }
-.grade-high { color: #1eff00; text-shadow: 0 0 5px rgba(30, 255, 0, 0.3); }
-.grade-rare { color: #0070dd; text-shadow: 0 0 5px rgba(0, 112, 221, 0.3); }
-.grade-hero { color: #a335ee; text-shadow: 0 0 8px rgba(163, 53, 238, 0.4); }
-.grade-legend { color: #ff8000; text-shadow: 0 0 10px rgba(255, 128, 0, 0.5); }
-.grade-mythic { color: #ff0000; text-shadow: 0 0 12px rgba(255, 0, 0, 0.6); font-weight: 700; }
-.grade-transcend { color: #00f2ff; text-shadow: 0 0 15px rgba(0, 242, 255, 0.7); font-weight: 800; animation: pulseCyan 2s infinite; }
+.grade-common {
+    color: #ffffff;
+}
+
+.grade-high {
+    color: #1eff00;
+    text-shadow: 0 0 5px rgba(30, 255, 0, 0.3);
+}
+
+.grade-rare {
+    color: #0070dd;
+    text-shadow: 0 0 5px rgba(0, 112, 221, 0.3);
+}
+
+.grade-hero {
+    color: #a335ee;
+    text-shadow: 0 0 8px rgba(163, 53, 238, 0.4);
+}
+
+.grade-legend {
+    color: #ff8000;
+    text-shadow: 0 0 10px rgba(255, 128, 0, 0.5);
+}
+
+.grade-mythic {
+    color: #ff0000;
+    text-shadow: 0 0 12px rgba(255, 0, 0, 0.6);
+    font-weight: 700;
+}
+
+.grade-transcend {
+    color: #00f2ff;
+    text-shadow: 0 0 15px rgba(0, 242, 255, 0.7);
+    font-weight: 800;
+    animation: pulseCyan 2s infinite;
+}
 
 @keyframes pulseCyan {
-    0% { opacity: 0.8; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
-    50% { opacity: 1; text-shadow: 0 0 20px rgba(0, 242, 255, 0.9); }
-    100% { opacity: 0.8; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+    0% {
+        opacity: 0.8;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    }
+
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 20px rgba(0, 242, 255, 0.9);
+    }
+
+    100% {
+        opacity: 0.8;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    }
+}
+
+/* Quest Modal Dual Slots */
+.quest-slots-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.quest-slot-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 15px;
+    transition: var(--transition);
+}
+
+.quest-slot-card:hover {
+    border-color: rgba(123, 79, 255, 0.5);
+    background: rgba(123, 79, 255, 0.05);
+}
+
+.quest-slot-card.top {
+    border-left: 4px solid var(--accent-purple);
+}
+
+.quest-slot-card.bottom {
+    border-left: 4px solid var(--accent-cyan);
+}
+
+.quest-slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.slot-type-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent-purple);
+    background: rgba(123, 79, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.quest-slot-card.bottom .slot-type-tag {
+    color: var(--accent-cyan);
+    background: rgba(0, 242, 255, 0.1);
+}
+
+.slot-desc-text {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+.quest-info-row {
+    margin-bottom: 10px;
+}
+
+.quest-title {
+    font-size: 1rem;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.quest-target-detail {
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+}
+
+.quest-progress-section {
+    margin-bottom: 15px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    color: var(--text-dim);
+}
+
+.progress-container.mini {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-container.mini .progress-bar {
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+.quest-reward-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.reward-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+.reward-value {
+    color: var(--gold-color);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.quest-footer-actions {
+    text-align: right;
+}
+
+.claim-btn {
+    width: 100%;
+}
+
+.quest-hint-text {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
 }
