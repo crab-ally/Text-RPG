@@ -12,6 +12,7 @@ class Game {
          */
         this.gameState = {
             player: {
+                job: '초보자', mag: 0,                   // 직업 및 마력
                 level: 1, xp: 0, xpNext: 70,               // 레벨 및 경험치 시스템
                 hp: 100, hpMax: 100, mp: 50, mpMax: 50,    // 생명력 및 마력
                 atk: 10, def: 5, cri: 5, eva: 5, gold: 500, // 전투 스탯 및 재화
@@ -228,15 +229,39 @@ class Game {
         document.getElementById('player-gold').innerText = Math.floor(p.gold).toLocaleString();
         document.getElementById('game-day').innerText = w.day;
 
+        // 직업 및 공격력/마력 텍스트 업데이트
+        const jobEl = document.getElementById('player-job');
+        if (jobEl) {
+            p.job = p.job || '초보자';
+            jobEl.innerText = p.job;
+            jobEl.className = p.job === '전사' ? 'job-warrior' : (p.job === '마법사' ? 'job-mage' : '');
+        }
+        const atkLabel = document.getElementById('stat-atk-label');
+        if (atkLabel) atkLabel.innerText = p.job === '마법사' ? '마력' : '공격력';
+
         // 스탯 바 (HP/MP/XP) 업데이트
         document.getElementById('hp-cur').innerText = Math.ceil(p.hp);
         document.getElementById('hp-max').innerText = p.hpMax;
         document.getElementById('mp-cur').innerText = Math.ceil(p.mp);
         document.getElementById('mp-max').innerText = p.mpMax;
-        document.getElementById('stat-atk').innerText = p.atk;
+        document.getElementById('stat-atk').innerText = p.job === '마법사' ? (p.mag || 0) : p.atk;
         document.getElementById('stat-def').innerText = p.def;
         document.getElementById('stat-cri').innerText = p.cri + '%';
         document.getElementById('stat-eva').innerText = p.eva + '%';
+
+        // 버프 리스트 표시
+        const buffList = document.getElementById('buff-list');
+        if (buffList) {
+            buffList.innerHTML = '';
+            if (this.currentBattle && this.currentBattle.activeBuffs) {
+                this.currentBattle.activeBuffs.forEach(b => {
+                    const span = document.createElement('span');
+                    span.className = 'buff-item';
+                    span.innerText = `${b.name} (${b.duration}턴)`;
+                    buffList.appendChild(span);
+                });
+            }
+        }
 
         document.getElementById('hp-bar').style.width = (p.hp / p.hpMax * 100) + '%';
         document.getElementById('mp-bar').style.width = (p.mp / p.mpMax * 100) + '%';
@@ -389,7 +414,7 @@ class Game {
         qh.onclick = null; qh.onkeydown = null;
 
         this.invalidateStaleDailyQuest();
-        
+
         // 모든 마을에서 활성화된 의뢰 수집 (최대 3개 표시)
         const activeQuests = [];
         Object.keys(w.quests).forEach(tId => {
@@ -442,21 +467,57 @@ class Game {
 
     /**
      * 플레이어의 최종 공격력과 방어력을 계산합니다.
-     * 레벨 보너스와 장착 장비의 기본 스탯 + 강화 수치(복리 적용)를 합산합니다.
+     * 레벨 보너스와 장착 장비의 기본 스탯 + 강화 수치(복리 적용), 직업 보정, 패시브 효과를 합산합니다.
      */
     updateStats() {
         const p = this.gameState.player;
+        p.job = p.job || '초보자';
 
-        // 장비의 스탯에 강화 배율을 적용하여 반환하는 헬퍼 함수
         const getEqStat = (it, stat) => {
             if (!it || !it[stat]) return 0;
             const plus = it.plus || 0;
-            // 강화 1단계당 약 15%의 성능 차이가 나도록 복리 적용 루틴
             return Math.floor(it[stat] * Math.pow(1.15, plus));
         };
 
-        p.atk = 10 + (p.level - 1) * 2 + getEqStat(p.equipment.weapon, 'atk') + getEqStat(p.equipment.armor, 'atk');
-        p.def = 5 + (p.level - 1) * 1 + getEqStat(p.equipment.weapon, 'def') + getEqStat(p.equipment.armor, 'def');
+        let baseAtk = 10 + (p.level - 1) * 2 + getEqStat(p.equipment.weapon, 'atk') + getEqStat(p.equipment.armor, 'atk');
+        let baseDef = 5 + (p.level - 1) * 1 + getEqStat(p.equipment.weapon, 'def') + getEqStat(p.equipment.armor, 'def');
+
+        p.atk = baseAtk;
+        p.def = baseDef;
+        p.cri = 5;
+        p.eva = 5;
+        p.mag = 0;
+
+        // 직업별 기본 보정 및 패시브
+        if (p.job === '전사') {
+            p.def = Math.floor(p.def * 1.5);
+            p.eva = Math.max(0, p.eva - 5);
+
+            // 투쟁심 (Lv 60)
+            if (p.level >= 60 && (p.hp / p.hpMax) <= 0.5) {
+                p.atk = Math.floor(p.atk * 1.2);
+                p.cri += 15;
+            }
+        } else if (p.job === '마법사') {
+            p.mag = p.atk; // 공격력 -> 마력 치환
+            p.atk = 0;
+            p.def = Math.floor(p.def * 0.7);
+
+            // 집중 (Lv 60)
+            if (p.level >= 60 && (p.mp / p.mpMax) >= 0.7) {
+                p.mag = Math.floor(p.mag * 1.15);
+                p.cri += 15;
+            }
+        }
+
+        // 전투 중 버프 효과 적용
+        if (this.currentBattle && this.currentBattle.activeBuffs) {
+            this.currentBattle.activeBuffs.forEach(b => {
+                if (b.type === 'berserk') { p.atk = Math.floor(p.atk * 1.5); p.eva = 0; } // 광전사의 혼 (atk 대폭증가)
+                if (b.type === 'phaseShift') { p.cri += 50; p.eva = 100; } // 위상 변환
+                if (b.type === 'ironWall') { p.def = Math.floor(p.def * 1.5); } // 철벽 자세 
+            });
+        }
     }
 
     /**
@@ -513,7 +574,7 @@ class Game {
         panel.innerHTML = '';
 
         // 건물 정렬 순서 정의
-        const order = ['inn', 'shop', 'blacksmith', 'alchemy', 'training', 'antique', 'donation'];
+        const order = ['jobCenter', 'inn', 'shop', 'blacksmith', 'alchemy', 'training', 'antique', 'donation'];
 
         order.forEach(b => {
             const isUnlocked = town.buildings.includes(b);
@@ -536,6 +597,7 @@ class Game {
 
     getBuildingName(b) {
         const names = {
+            'jobCenter': '전직소',
             'shop': '상점',
             'inn': '여관',
             'dungeon': '던전 입장',
@@ -553,8 +615,9 @@ class Game {
     /**
      * 특정 건물 버튼을 눌렀을 때 해당 기능으로 분기합니다.
      */
-    handleBuildingClick(b) {
-        if (b === 'inn') this.openInn();
+    openBuilding(b) {
+        if (b === 'jobCenter') this.openJobCenter();
+        else if (b === 'inn') this.openInn();
         else if (b === 'shop') this.openShop();
         else if (b === 'dungeon') this.enterDungeon();
         else if (b === 'blacksmith') this.openBlacksmith();
@@ -584,6 +647,55 @@ class Game {
             <p><small>* 다음 날로 진행하며 세금이 발생합니다.</small></p>
             <button onclick="game.rest(${cost})">휴식하기</button>
         `);
+    }
+
+    openJobCenter() {
+        const p = this.gameState.player;
+        if (p.level < 10) {
+            this.showModal('전직소', '<p>레벨 10 이상부터 전직이 가능합니다.</p>');
+            return;
+        }
+        if (p.job !== '초보자') {
+            this.showModal('전직소', `<p>이미 <strong>${p.job}</strong>(으)로 전직하셨습니다.</p>`);
+            return;
+        }
+
+        let h = `
+            <div style="text-align:center; margin-bottom: 20px;">
+                <h3 style="color:var(--accent-cyan); font-family:'Orbitron', sans-serif;">직업 선택</h3>
+                <p style="color:var(--text-dim); font-size:0.9rem;">전직 시 되돌릴 수 없으며, 스탯이 직업에 맞게 변경됩니다.</p>
+            </div>
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <div class="shop-item" style="flex:1; flex-direction:column; gap:15px; text-align:center; align-items:center;">
+                    <h3 class="job-warrior" style="font-size:1.5rem; margin:0;">전사</h3>
+                    <p style="font-size:0.85rem; color:var(--text-dim); line-height:1.5;">높은 체력과 방어력을 바탕으로 적의 공격을 맞고 버티는 근접 전투의 전문가.</p>
+                    <button onclick="game.changeJob('전사')" style="width:100%;">전사로 전직</button>
+                </div>
+                <div class="shop-item" style="flex:1; flex-direction:column; gap:15px; text-align:center; align-items:center;">
+                    <h3 class="job-mage" style="font-size:1.5rem; margin:0;">마법사</h3>
+                    <p style="font-size:0.85rem; color:var(--text-dim); line-height:1.5;">압도적인 마력과 MP. 방어력은 낮지만 강력한 파괴력을 지닌 하이리스크 딜러.</p>
+                    <button onclick="game.changeJob('마법사')" style="width:100%;">마법사로 전직</button>
+                </div>
+            </div>
+        `;
+        this.showModal('전직소', h);
+    }
+
+    changeJob(job) {
+        const p = this.gameState.player;
+        p.job = job;
+        if (job === '전사') {
+            p.hpMax = Math.floor(p.hpMax * 1.5);
+            p.hp = p.hpMax;
+        } else if (job === '마법사') {
+            p.mpMax = Math.floor(p.mpMax * 1.5);
+            p.mp = p.mpMax;
+        }
+
+        this.log(`축하합니다! <strong>${job}</strong>(으)로 전직했습니다!`, 'victory');
+        this.updateStats();
+        this.updateUI();
+        this.closeModal();
     }
 
     /**
@@ -795,10 +907,10 @@ class Game {
         this.log(`${itData.name}을(를) 구매했습니다.`, 'gain'); this.updateUI(); this.openShop();
     }
 
-    openBuilding(b) {
-        if (b === 'shop') this.purchasedInSession = new Set();
-        this.handleBuildingClick(b);
-    }
+    //openBuilding(b) {
+    //    if (b === 'shop') this.purchasedInSession = new Set();
+    //    this.handleBuildingClick(b);
+    //}
 
 
     /**
@@ -1114,7 +1226,16 @@ class Game {
         m.hpMax = m.hp;
 
         // 전투 상태 객체 생성
-        this.currentBattle = { monster: m, isBoss: isB || type.includes('mid') || type === 'boss', type, step, dungeon: dg };
+        this.currentBattle = {
+            monster: m,
+            isBoss: isB || type.includes('mid') || type === 'boss',
+            type,
+            step,
+            dungeon: dg,
+            skillCooldowns: {},
+            activeBuffs: [],
+            turnCount: 0
+        };
 
         // 몬스터 체력 바 및 UI 표시
         const mStatus = document.getElementById('monster-status');
@@ -1144,63 +1265,270 @@ class Game {
 
 
     /**
-     * 전투 중 행동 옵션(공격, 도망) 버튼을 렌더링합니다.
+     * 전투 중 행동 옵션(공격, 스킬, 도망) 버튼을 렌더링합니다.
      */
     renderBattleActions() {
         const p = document.getElementById('action-panel');
         p.innerHTML = `<button onclick="game.battleTurn()">공격</button>
+                       <button onclick="game.openSkillPanel()">스킬</button>
                        <button class="secondary" onclick="game.tryEscape()">도망</button>`;
     }
 
-    /**
-     * 전투 턴을 진행합니다. 플레이어가 먼저 공격하고 생존 시 몬스터가 반격합니다.
-     */
-    battleTurn() {
-        const p = this.gameState.player; const b = this.currentBattle; const m = b.monster;
+    openSkillPanel() {
+        const p = this.gameState.player;
+        const b = this.currentBattle;
+        if (!b) return;
 
-        // 몬스터 회피 확률 체크
-        if (Math.random() < (m.eva || 0) / 100) {
-            this.log(`${m.name}이(가) 공격을 신속하게 회피했습니다!`, 'system');
-        } else {
-            // 데미지 계산 (최소 1)
-            let d = Math.max(1, p.atk - m.def);
-            if (Math.random() < p.cri / 100) { d *= 2; this.log(`치명타! ${d} 피해!`, 'crit'); }
-            else this.log(`${m.name}에게 ${d} 피해.`);
-            m.hp -= d;
-            this.updateMonsterUI();
-        }
+        let skills = [];
+        if (p.job === '전사') skills = GAME_DATA.WARRIOR_SKILLS;
+        else if (p.job === '마법사') skills = GAME_DATA.MAGE_SKILLS;
 
-        // 몬스터 사망 체크
-        if (m.hp <= 0) {
-            const bData = this.currentBattle;
-            const bType = bData.type;
+        const activeSkills = skills.filter(s => s.type === 'active' && p.level >= s.reqLv);
 
-            this.victory(m.name, bData.isBoss);
-            this.currentBattle = null; // 승리 후 전투 상태 해제
-            document.getElementById('monster-status').classList.add('hidden');
-
-            if (bType === 'normal') {
-                this.exploreLoop(bData.dungeon, bData.step + 1);
-            } else if (bType === 'mid') {
-                document.body.classList.remove('in-dungeon');
-                this.renderTownActions();
-            } else if (bType === 'mid_sequential') {
-                // victory()에서 최종보스 도전 버튼을 렌더링함
-            } else if (bData.isBoss || bType === 'boss') {
-                document.body.classList.remove('in-dungeon');
-                this.renderTownActions();
-            }
-
-            this.updateUI();
+        if (activeSkills.length === 0) {
+            this.log('사용 가능한 스킬이 없습니다.', 'system');
             return;
         }
-        // 몬스터의 반격
-        if (Math.random() < (p.eva || 0) / 100) {
-            this.log(`${m.name}의 공격을 신속하게 회피했습니다!`, 'system');
-        } else {
-            let md = Math.max(1, m.atk - p.def); p.hp -= md; this.log(`${m.name}의 공격! ${md} 피해.`, 'lose');
-            if (p.hp <= 0) this.death();
+
+        let h = '<div class="skill-grid">';
+        activeSkills.forEach(s => {
+            const cd = b.skillCooldowns[s.id] || 0;
+            const canAfford = s.costType === 'hp' ? p.hp > s.costVal : (s.costType === 'mp' ? p.mp >= s.costVal : true);
+            const isUsable = cd <= 0 && canAfford && !b.skillUsedThisTurn;
+
+            h += `
+                <button class="skill-btn" onclick="game.useSkill('${s.id}')" ${!isUsable ? 'disabled' : ''}>
+                    <div class="skill-btn-header">
+                        <span class="skill-name">${s.name}</span>
+                        <span class="skill-cost cost-${s.costType}">${s.costType.toUpperCase()} ${s.costVal}</span>
+                    </div>
+                    <div class="skill-desc">${s.desc}</div>
+                    ${cd > 0 ? `<div class="skill-cooldown">쿨타임: ${cd}턴</div>` : ''}
+                </button>
+            `;
+        });
+        h += '</div><button class="secondary" style="margin-top:15px; width:100%;" onclick="game.closeSkillPanel()">돌아가기</button>';
+
+        const panel = document.getElementById('action-panel');
+        panel.innerHTML = h;
+    }
+
+    closeSkillPanel() {
+        this.renderBattleActions();
+    }
+
+    useSkill(skillId) {
+        const p = this.gameState.player;
+        const b = this.currentBattle;
+
+        let skills = p.job === '전사' ? GAME_DATA.WARRIOR_SKILLS : GAME_DATA.MAGE_SKILLS;
+        const skill = skills.find(s => s.id === skillId);
+        if (!skill) return;
+
+        if (skill.costType === 'hp') {
+            if (p.hp <= skill.costVal) { this.log('HP가 부족합니다.', 'system'); return; }
+            p.hp -= skill.costVal;
+        } else if (skill.costType === 'mp') {
+            let cost = skill.costVal;
+            if (p.job === '마법사' && p.level >= 90 && Math.random() < 0.2) {
+                this.log('현자의 지혜 발동! MP를 소모하지 않습니다.', 'gain');
+                cost = 0;
+            }
+            if (p.mp < cost) { this.log('MP가 부족합니다.', 'system'); return; }
+            p.mp -= cost;
         }
+
+        b.skillCooldowns[skill.id] = skill.cooldown;
+        b.skillUsedThisTurn = true;
+
+        this.closeSkillPanel();
+        this.battleTurn(skill);
+    }
+
+    /**
+     * 전투 턴을 진행합니다.
+     */
+    battleTurn(skill = null) {
+        const p = this.gameState.player; const b = this.currentBattle; const m = b.monster;
+        if (!b) return;
+        b.skillUsedThisTurn = false;
+
+        this.updateStats();
+
+        let canAttack = true;
+        let playerDmgMult = 1.0;
+        let isCriticalShift = false;
+
+        if (b.activeBuffs.some(buff => buff.type === 'timeRift')) { playerDmgMult = 2.0; }
+        if (b.activeBuffs.some(buff => buff.type === 'phaseShift')) { isCriticalShift = true; }
+        if (b.activeBuffs.some(buff => buff.type === 'lordDescent')) {
+            canAttack = false;
+            this.log('기력 소진으로 행동할 수 없습니다.', 'lose');
+        }
+
+        if (canAttack) {
+            let mEva = m.eva || 0;
+            if (b.activeBuffs.some(buff => buff.type === 'frozenSpear')) mEva = Math.max(0, mEva - 20);
+
+            if (Math.random() < mEva / 100 && (!skill || skill.id !== 'ws10')) {
+                this.log(`${m.name}이(가) 공격을 신속하게 회피했습니다!`, 'system');
+            } else {
+                let atkStat = p.job === '마법사' ? p.mag : p.atk;
+                let d = Math.max(1, atkStat - m.def);
+
+                if (skill) {
+                    this.log(`[스킬 사용] ${skill.name}!`, 'system');
+                    if (skill.mult) d = Math.max(1, (atkStat * skill.mult) - m.def);
+
+                    if (skill.id === 'ws3' && Math.random() < 0.2) b.monsterStunned = true;
+                    if (skill.id === 'ws4') b.activeBuffs.push({ type: 'ironWall', name: '철벽', duration: 3 });
+                    if (skill.id === 'ws5') b.activeBuffs.push({ type: 'retribution', name: '심판', duration: 3 });
+                    if (skill.id === 'ws7') d = Math.max(1, (atkStat * skill.mult) - (m.def * 0.5));
+                    if (skill.id === 'ws8') b.activeBuffs.push({ type: 'berserk', name: '광폭', duration: 3 });
+                    if (skill.id === 'ws10') { d = atkStat * skill.mult; b.activeBuffs.push({ type: 'lordDescent', name: '소진', duration: 2 }); }
+
+                    if (skill.id === 'ms3') b.activeBuffs.push({ type: 'frozenSpear', name: '둔화', duration: 2 });
+                    if (skill.id === 'ms4') b.activeBuffs.push({ type: 'manaShield', name: '실드', duration: 99 });
+                    if (skill.id === 'ms5') b.activeBuffs.push({ type: 'timeRift', name: '파열', duration: 2 });
+                    if (skill.id === 'ms7') b.activeBuffs.push({ type: 'burn', name: '화상', duration: 3 });
+                    if (skill.id === 'ms8') b.activeBuffs.push({ type: 'phaseShift', name: '위상', duration: 1 });
+                    if (skill.id === 'ms10') {
+                        d = (atkStat * skill.mult) + (p.mp * 2);
+                        b.activeBuffs.push({ type: 'mpBlock', name: '마나차단', duration: 2 });
+                    }
+                }
+
+                d = Math.floor(d * playerDmgMult);
+
+                let criChance = p.cri;
+                if (isCriticalShift) criChance += 50;
+
+                if (Math.random() < criChance / 100) { d *= 2; this.log(`치명타! ${d} 피해!`, 'crit'); }
+                else if (d > 0) this.log(`${m.name}에게 ${d} 피해.`);
+
+                m.hp -= d;
+                this.updateMonsterUI();
+            }
+        }
+
+        if (m.hp <= 0) return this.handleMonsterDeath();
+
+        let mStunned = b.monsterStunned;
+        b.monsterStunned = false;
+
+        if (mStunned) {
+            this.log(`${m.name}은(는) 기절하여 행동하지 못합니다!`, 'system');
+        } else {
+            let pEva = p.eva || 0;
+            if (b.activeBuffs.some(buff => buff.type === 'phaseShift')) pEva = 100;
+            if (b.activeBuffs.some(buff => buff.type === 'berserk')) pEva = 0;
+
+            if (Math.random() < pEva / 100) {
+                this.log(`${m.name}의 공격을 회피했습니다!`, 'system');
+            } else {
+                let md = Math.max(1, m.atk - p.def);
+                if (b.activeBuffs.some(buff => buff.type === 'ironWall')) md = Math.floor(md * 0.5);
+                if (b.activeBuffs.some(buff => buff.type === 'berserk')) md = Math.floor(md * 1.5);
+
+                if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
+                    let mpDmg = Math.floor(md * 1.5);
+                    if (p.mp >= mpDmg) {
+                        p.mp -= mpDmg;
+                        md = 0;
+                        this.log(`마나 실드로 피해를 방어했습니다! (MP -${mpDmg})`, 'gain');
+                    } else {
+                        b.activeBuffs = b.activeBuffs.filter(buff => buff.type !== 'manaShield');
+                        this.log(`마나가 부족하여 마나 실드가 깨졌습니다!`, 'lose');
+                    }
+                }
+
+                if (md > 0) {
+                    p.hp -= md;
+                    this.log(`${m.name}의 공격! ${md} 피해.`, 'lose');
+
+                    let counterChance = 0;
+                    let isRetribution = false;
+                    if (b.activeBuffs.some(buff => buff.type === 'ironWall')) counterChance += 0.3;
+                    if (b.activeBuffs.some(buff => buff.type === 'retribution')) { counterChance = 1.0; isRetribution = true; }
+
+                    if (Math.random() < counterChance && m.hp > 0) {
+                        let cdmg = Math.floor(p.atk * 0.8);
+                        m.hp -= cdmg;
+                        this.log(`반격! ${m.name}에게 ${cdmg} 피해.`, 'system');
+                        if (isRetribution) {
+                            let heal = Math.floor(cdmg * 0.3);
+                            p.hp = Math.min(p.hpMax, p.hp + heal);
+                            this.log(`심판의 일격으로 HP ${heal} 회복.`, 'gain');
+                        }
+                        this.updateMonsterUI();
+                    }
+                }
+
+                if (p.hp <= 0) return this.death();
+            }
+        }
+
+        if (m.hp <= 0) return this.handleMonsterDeath();
+
+        this.endOfTurnProcessing();
+    }
+
+    handleMonsterDeath() {
+        const bData = this.currentBattle;
+        const bType = bData.type;
+
+        this.victory(bData.monster.name, bData.isBoss);
+        this.currentBattle = null;
+        document.getElementById('monster-status').classList.add('hidden');
+
+        if (bType === 'normal') this.exploreLoop(bData.dungeon, bData.step + 1);
+        else if (bType === 'mid') { document.body.classList.remove('in-dungeon'); this.renderTownActions(); }
+        else if (bType === 'mid_sequential') { /* handled in victory */ }
+        else if (bData.isBoss || bType === 'boss') { document.body.classList.remove('in-dungeon'); this.renderTownActions(); }
+
+        this.updateUI();
+    }
+
+    endOfTurnProcessing() {
+        const p = this.gameState.player;
+        const b = this.currentBattle; const m = b.monster;
+
+        if (b.activeBuffs.some(buff => buff.type === 'burn')) {
+            let bDmg = Math.floor(m.hpMax * 0.05);
+            m.hp -= bDmg;
+            this.log(`[화상] ${m.name}이(가) ${bDmg} 피해를 입었습니다.`, 'crit');
+            this.updateMonsterUI();
+            if (m.hp <= 0) return this.handleMonsterDeath();
+        }
+
+        let mpRecoveryBlocked = b.activeBuffs.some(buff => buff.type === 'mpBlock');
+
+        if (p.job === '마법사' && !mpRecoveryBlocked) {
+            if (p.level >= 20) {
+                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * 0.05));
+            }
+        }
+
+        if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
+            if (p.mp >= 15) { p.mp -= 15; }
+            else { b.activeBuffs = b.activeBuffs.filter(buff => buff.type !== 'manaShield'); this.log(`유지 비용 부족으로 마나 실드가 해제되었습니다.`, 'system'); }
+        }
+
+        if (p.job === '전사' && p.level >= 90 && (p.hp / p.hpMax) <= 0.3) {
+            let heal = Math.floor(p.hpMax * 0.1);
+            p.hp = Math.min(p.hpMax, p.hp + heal);
+            this.log(`[강철 심장] HP ${heal} 회복.`, 'gain');
+        }
+
+        for (let k in b.skillCooldowns) {
+            if (b.skillCooldowns[k] > 0) b.skillCooldowns[k]--;
+        }
+
+        b.activeBuffs.forEach(buff => buff.duration--);
+        b.activeBuffs = b.activeBuffs.filter(buff => buff.duration > 0 || buff.type === 'manaShield');
+
+        b.turnCount++;
+        this.updateStats();
         this.updateUI();
     }
 
@@ -1867,8 +2195,8 @@ class Game {
             claimed: false
         };
 
-        const msg = type === 'hunt' 
-            ? `처치 의뢰 수락: ${m.name} ${targetCount}마리` 
+        const msg = type === 'hunt'
+            ? `처치 의뢰 수락: ${m.name} ${targetCount}마리`
             : `장리품 수집 수락: ${itemName} ${targetCount}개`;
         this.log(msg, 'system');
         this.openQuest();

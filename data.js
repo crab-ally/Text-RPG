@@ -6,7 +6,7 @@ const GAME_DATA = {
             levelRange: '1 ~ 20',
             tier: 1,
             unlockCondition: '기본 제공',
-            buildings: ['shop', 'inn', 'dungeon', 'donation', 'quest', 'training', 'blacksmith', 'antique'],
+            buildings: ['jobCenter', 'shop', 'inn', 'dungeon', 'donation', 'quest', 'training', 'blacksmith', 'antique'],
             dungeon: { id: 'zone1', name: '초심자의 숲', midBoss: '슬라임 퀸', midBossLv: 12, boss: '킹 슬라임', bossLv: 20, steps: 10 }
         },
         {
@@ -159,9 +159,29 @@ const GAME_DATA = {
         'mp6': { materials: { '공허의 정수': 5 }, gold: 100000 }
     },
 
-    SKILLS: [
-        { id: 's1', name: '강타', level: 5, cost: 500, type: 'active', mp: 10, mult: 1.5 },
-        { id: 's2', name: '연속 공격', level: 15, cost: 5000, type: 'active', mp: 25, mult: 2.5 },
-        { id: 's3', name: '심연의 일격', level: 50, cost: 100000, type: 'active', mp: 60, mult: 5.0 }
+    WARRIOR_SKILLS: [
+        { id: 'ws1', name: '강타', type: 'active', reqLv: 10, costType: 'hp', costVal: 10, desc: '강한 물리 피해를 입힙니다.', mult: 1.5, cooldown: 0 },
+        { id: 'ws2', name: '강인한 신체', type: 'passive', reqLv: 20, costType: 'none', costVal: 0, desc: '최대 HP가 20% 증가합니다.', cooldown: 0 },
+        { id: 'ws3', name: '돌진 기동', type: 'active', reqLv: 30, costType: 'hp', costVal: 25, desc: '적에게 빠르게 접근 후 공격합니다. (20% 확률로 1턴 기절)', mult: 1.8, cooldown: 2 },
+        { id: 'ws4', name: '철벽 자세', type: 'active', reqLv: 40, costType: 'hp', costVal: 40, desc: '3턴 동안 받는 피해가 50% 감소하고 반격 확률이 30% 증가합니다.', cooldown: 5 },
+        { id: 'ws5', name: '심판의 반격', type: 'active', reqLv: 50, costType: 'hp', costVal: 50, desc: '3턴 동안 피격 시 무조건 반격합니다. (반격 시 가한 피해의 일부 흡수)', cooldown: 6 },
+        { id: 'ws6', name: '투쟁심', type: 'passive', reqLv: 60, costType: 'none', costVal: 0, desc: 'HP가 50% 이하일 때 공격력이 20%, 치명타 확률이 15% 증가합니다.', cooldown: 0 },
+        { id: 'ws7', name: '분쇄격', type: 'active', reqLv: 70, costType: 'hp', costVal: 80, desc: '적의 방어력을 50% 무시하는 강력한 공격을 가합니다.', mult: 2.2, cooldown: 4 },
+        { id: 'ws8', name: '광전사의 혼', type: 'active', reqLv: 80, costType: 'hp', costVal: 150, desc: '3턴 동안 공격력이 대폭 증가하지만 회피율이 0이 되고 받는 피해가 증가합니다.', cooldown: 8 },
+        { id: 'ws9', name: '강철 심장', type: 'passive', reqLv: 90, costType: 'none', costVal: 0, desc: 'HP가 30% 이하일 때 턴 종료 시 최대 HP의 10%를 회복합니다.', cooldown: 0 },
+        { id: 'ws10', name: '군주 강림', type: 'active', reqLv: 100, costType: 'hp', costVal: 300, desc: '적에게 초강력 일격을 가합니다. 사용 후 2턴 간 스킬을 사용할 수 없습니다.', mult: 4.0, cooldown: 10 }
+    ],
+
+    MAGE_SKILLS: [
+        { id: 'ms1', name: '화염구', type: 'active', reqLv: 10, costType: 'mp', costVal: 15, desc: '기본적인 마법 화염 피해를 입힙니다.', mult: 1.6, cooldown: 0 },
+        { id: 'ms2', name: '마력 친화', type: 'passive', reqLv: 20, costType: 'none', costVal: 0, desc: '최대 MP가 20% 증가하며, 매 턴 최대 MP의 5%를 자연 회복합니다.', cooldown: 0 },
+        { id: 'ms3', name: '빙결의 창', type: 'active', reqLv: 30, costType: 'mp', costVal: 35, desc: '얼음 창을 날려 피해를 주고, 2턴 동안 적의 회피율을 감소시킵니다.', mult: 1.8, cooldown: 3 },
+        { id: 'ms4', name: '마나 실드', type: 'active', reqLv: 40, costType: 'mp', costVal: 0, desc: '활성화 시 피해를 HP 대신 MP로 1.5배 흡수합니다. 턴당 MP 15 유지 비용.', cooldown: 5 },
+        { id: 'ms5', name: '시간 파열', type: 'active', reqLv: 50, costType: 'mp', costVal: 60, desc: '시간 균열을 일으켜 다음 턴 플레이어의 공격력을 2배로 만듭니다.', mult: 1.2, cooldown: 6 },
+        { id: 'ms6', name: '집중', type: 'passive', reqLv: 60, costType: 'none', costVal: 0, desc: '현재 MP가 70% 이상일 때 마력과 치명타 확률이 15% 증가합니다.', cooldown: 0 },
+        { id: 'ms7', name: '폭렬 마법', type: 'active', reqLv: 70, costType: 'mp', costVal: 100, desc: '강력한 폭발을 일으키며, 적에게 3턴간 화상(매 턴 체력 비례 피해)을 입힙니다.', mult: 2.5, cooldown: 5 },
+        { id: 'ms8', name: '위상 변환', type: 'active', reqLv: 80, costType: 'mp', costVal: 120, desc: '다음 1턴 간 적의 모든 공격을 회피하고 다음 공격의 치명타 확률이 50% 증가합니다.', cooldown: 7 },
+        { id: 'ms9', name: '현자의 지혜', type: 'passive', reqLv: 90, costType: 'none', costVal: 0, desc: '스킬 사용 시 20% 확률로 MP를 소모하지 않습니다.', cooldown: 0 },
+        { id: 'ms10', name: '메테오', type: 'active', reqLv: 100, costType: 'mp', costVal: 300, desc: '현재 MP에 비례한 괴멸적 피해를 입히지만 2턴간 MP 회복이 차단됩니다.', mult: 3.5, cooldown: 12 }
     ]
 };
