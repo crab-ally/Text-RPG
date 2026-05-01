@@ -69,37 +69,37 @@ const GAME_DATA = {
     MONSTERS: {
         zone1: [
             { name: '슬라임', hp: 130, atk: 15, def: 5, xp: 23, gold: 15, loots: ['슬라임 젤리'], eva: 5 },
-            { name: '숲 거미', hp: 240, atk: 22, def: 8, xp: 40, gold: 30, loots: ['거미의 독샘'], eva: 8 },
+            { name: '숲 거미', hp: 240, atk: 22, def: 8, xp: 40, gold: 30, loots: ['거미의 독샘'], eva: 8, statusEffects: [{ type: 'poison', chance: 0.2, duration: 3 }] },
             { name: '슬라임 퀸', hp: 700, atk: 40, def: 15, xp: 170, gold: 180, loots: ['왕관 조각'], isMidBoss: true, eva: 10 },
             { name: '킹 슬라임', hp: 1200, atk: 60, def: 25, xp: 580, gold: 550, loots: ['거대 핵'], isBoss: true, eva: 15 }
         ],
         zone2: [
             { name: '돌 괴물', hp: 700, atk: 80, def: 35, xp: 140, gold: 120, loots: ['암석 파편'], eva: 5 },
             { name: '미믹', hp: 500, atk: 110, def: 25, xp: 175, gold: 750, loots: ['미믹의 이빨'], eva: 15 },
-            { name: '골렘 가디언', hp: 2500, atk: 150, def: 75, xp: 920, gold: 1000, loots: ['강철 원석'], isMidBoss: true, eva: 12 },
-            { name: '강철 기사', hp: 4800, atk: 180, def: 90, xp: 2900, gold: 3500, loots: ['빛나는 강철'], isBoss: true, eva: 15 }
+            { name: '골렘 가디언', hp: 2500, atk: 150, def: 75, xp: 920, gold: 1000, loots: ['강철 원석'], isMidBoss: true, eva: 12, statusEffects: [{ type: 'stun', chance: 0.2, duration: 1 }] },
+            { name: '강철 기사', hp: 4800, atk: 180, def: 90, xp: 2900, gold: 3500, loots: ['빛나는 강철'], isBoss: true, eva: 15, statusEffects: [{ type: 'stun', chance: 0.15, duration: 1 }] }
         ],
         zone3: [
-            { name: '원령', hp: 2400, atk: 260, def: 100, xp: 700, gold: 650, loots: ['유령의 혼'], eva: 15 },
+            { name: '원령', hp: 2400, atk: 260, def: 100, xp: 700, gold: 650, loots: ['유령의 혼'], eva: 15, statusEffects: [{ type: 'curse', chance: 0.2, duration: 3 }] },
             { name: '녹슨 검객', hp: 1600, atk: 350, def: 150, xp: 630, gold: 550, loots: ['녹슨 칼날'], eva: 12 },
-            { name: '심해의 공포', hp: 8500, atk: 550, def: 250, xp: 3500, gold: 3200, loots: ['거대 촉수'], isMidBoss: true, eva: 15 },
+            { name: '심해의 공포', hp: 8500, atk: 550, def: 250, xp: 3500, gold: 3200, loots: ['거대 촉수'], isMidBoss: true, eva: 15, statusEffects: [{ type: 'fear', chance: 0.3, duration: 3 }] },
             { name: '해골 선장', hp: 14500, atk: 540, def: 280, xp: 11500, gold: 14000, loots: ['부러진 나침반'], isBoss: true, eva: 18 }
         ],
         zone4: [
             { name: '가고일', hp: 8000, atk: 1000, def: 450, xp: 2900, gold: 2500, loots: ['돌의 날개'], eva: 12 },
-            { name: '타락한 사제', hp: 11000, atk: 1300, def: 650, xp: 4000, gold: 4500, loots: ['검은 성서'], eva: 15 },
-            { name: '가시 지옥', hp: 28000, atk: 1700, def: 750, xp: 17500, gold: 18000, loots: ['피묻은 가시'], isMidBoss: true, eva: 18 },
-            { name: '파멸의 천사', hp: 45000, atk: 1800, def: 800, xp: 58000, gold: 65000, loots: ['타락한 깃털'], isBoss: true, eva: 20 }
+            { name: '타락한 사제', hp: 11000, atk: 1300, def: 650, xp: 4000, gold: 4500, loots: ['검은 성서'], eva: 15, statusEffects: [{ type: 'curse', chance: 0.3, duration: 3 }] },
+            { name: '가시 지옥', hp: 28000, atk: 1700, def: 750, xp: 17500, gold: 18000, loots: ['피묻은 가시'], isMidBoss: true, eva: 18, statusEffects: [{ type: 'bleeding', chance: 0.3, duration: 3 }] },
+            { name: '파멸의 천사', hp: 45000, atk: 1800, def: 800, xp: 58000, gold: 65000, loots: ['타락한 깃털'], isBoss: true, eva: 20, statusEffects: [{ type: 'weaken', chance: 0.2, duration: 3 }] }
         ],
         zone5: [
             { name: '에이션트 웜', hp: 35000, atk: 3600, def: 2000, xp: 17500, gold: 18000, loots: ['오래된 껍질'], eva: 10 },
-            { name: '에이션트 드레이크', hp: 100000, atk: 6600, def: 4000, xp: 290000, gold: 150000, loots: ['마른 비늘'], isMidBoss: true, eva: 20 },
-            { name: '드래곤 로드', hp: 140000, atk: 7200, def: 4500, xp: 1150000, gold: 750000, loots: ['용의 핵심'], isBoss: true, eva: 30 }
+            { name: '에이션트 드레이크', hp: 100000, atk: 6600, def: 4000, xp: 290000, gold: 150000, loots: ['마른 비늘'], isMidBoss: true, eva: 20, statusEffects: [{ type: 'burn', chance: 0.2, duration: 3 }] },
+            { name: '드래곤 로드', hp: 140000, atk: 7200, def: 4500, xp: 1150000, gold: 750000, loots: ['용의 핵심'], isBoss: true, eva: 30, statusEffects: [{ type: 'burn', chance: 0.3, duration: 3 }] }
         ],
         zone6: [
-            { name: '공허의 망령', hp: 250000, atk: 15000, def: 8000, xp: 500000, gold: 100000, loots: ['공허의 정수'], eva: 25 },
-            { name: '심연의 그림자', hp: 800000, atk: 35000, def: 15000, xp: 2500000, gold: 500000, loots: ['심연의 조각'], isMidBoss: true, eva: 35 },
-            { name: '공허의 절대자', hp: 2000000, atk: 80000, def: 40000, xp: 10000000, gold: 2000000, loots: ['공허의 눈'], isBoss: true, eva: 50 }
+            { name: '공허의 망령', hp: 250000, atk: 15000, def: 8000, xp: 500000, gold: 100000, loots: ['공허의 정수'], eva: 25, statusEffects: [{ type: 'slow', chance: 0.2, duration: 3 }] },
+            { name: '심연의 그림자', hp: 800000, atk: 35000, def: 15000, xp: 2500000, gold: 500000, loots: ['심연의 조각'], isMidBoss: true, eva: 35, statusEffects: [{ type: 'sleep', chance: 0.1, duration: 1 }] },
+            { name: '공허의 절대자', hp: 2000000, atk: 80000, def: 40000, xp: 10000000, gold: 2000000, loots: ['공허의 눈'], isBoss: true, eva: 50, statusEffects: [{ type: 'curse', chance: 0.4, duration: 5 }] }
         ]
     },
 
