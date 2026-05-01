@@ -119,8 +119,19 @@
 
                 <section class="active-buffs card">
                     <h2 class="card-title">상태 이상</h2>
-                    <div id="buff-list" class="buff-list">
-                        <!-- Buffs added dynamically -->
+                    <div class="status-container">
+                        <div class="status-group">
+                            <h3 class="status-owner">플레이어</h3>
+                            <div id="player-status-list" class="status-list">
+                                <!-- Player status effects -->
+                            </div>
+                        </div>
+                        <div class="status-group" id="monster-status-container" style="display: none;">
+                            <h3 class="status-owner" id="monster-status-label">몬스터</h3>
+                            <div id="monster-status-list" class="status-list">
+                                <!-- Monster status effects -->
+                            </div>
+                        </div>
                     </div>
                 </section>
             </aside>
