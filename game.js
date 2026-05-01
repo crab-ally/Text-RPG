@@ -23,7 +23,8 @@ class Game {
                 monsterEncyclopedia: {},                    // 몬스터 도감 데이터
                 unlockedRecipes: [],                        // 사용 완료된 레시피 (하얀색 표시)
                 discoveredRecipes: [],                      // 보유 중인 레시피 (노란색 표시)
-                materials: {}                               // 몬스터 전리품 인벤토리
+                materials: {},                              // 몬스터 전리품 인벤토리
+                activeStatusEffects: []                     // [NEW] 플레이어 상시 상태이상 (전투 외에도 유지될 수 있음)
             },
             world: {
                 currentLocation: 'town1', day: 1, inflation: 1.0, // 현재 장소, 날짜, 물가 상승률
@@ -249,19 +250,8 @@ class Game {
         document.getElementById('stat-cri').innerText = p.cri + '%';
         document.getElementById('stat-eva').innerText = p.eva + '%';
 
-        // 버프 리스트 표시
-        const buffList = document.getElementById('buff-list');
-        if (buffList) {
-            buffList.innerHTML = '';
-            if (this.currentBattle && this.currentBattle.activeBuffs) {
-                this.currentBattle.activeBuffs.forEach(b => {
-                    const span = document.createElement('span');
-                    span.className = 'buff-item';
-                    span.innerText = `${b.name} (${b.duration}턴)`;
-                    buffList.appendChild(span);
-                });
-            }
-        }
+        // 상태이상 리스트 표시
+        this.renderStatusEffects();
 
         document.getElementById('hp-bar').style.width = (p.hp / p.hpMax * 100) + '%';
         document.getElementById('mp-bar').style.width = (p.mp / p.mpMax * 100) + '%';
@@ -510,14 +500,104 @@ class Game {
             }
         }
 
-        // 전투 중 버프 효과 적용
-        if (this.currentBattle && this.currentBattle.activeBuffs) {
-            this.currentBattle.activeBuffs.forEach(b => {
-                if (b.type === 'berserk') { p.atk = Math.floor(p.atk * 1.5); p.eva = 0; } // 광전사의 혼 (atk 대폭증가)
-                if (b.type === 'phaseShift') { p.cri += 50; p.eva = 100; } // 위상 변환
-                if (b.type === 'ironWall') { p.def = Math.floor(p.def * 1.5); } // 철벽 자세 
-            });
+        // 전투 중 버프 및 상태이상 효과 적용
+        if (this.currentBattle) {
+            if (this.currentBattle.activeBuffs) {
+                this.currentBattle.activeBuffs.forEach(b => {
+                    if (b.type === 'berserk') { p.atk = Math.floor(p.atk * 1.5); p.eva = 0; }
+                    if (b.type === 'phaseShift') { p.cri += 50; p.eva = 100; }
+                    if (b.type === 'ironWall') { p.def = Math.floor(p.def * 1.5); }
+                });
+            }
+
+            // 플레이어 상태이상 효과 적용
+            if (this.currentBattle.playerStatusEffects) {
+                this.currentBattle.playerStatusEffects.forEach(s => {
+                    if (s.type === 'fear') p.atk = Math.floor(p.atk * 0.7);
+                    if (s.type === 'weaken') p.def = Math.floor(p.def * 0.7);
+                    if (s.type === 'slow') p.eva = Math.max(0, p.eva - 15);
+                });
+            }
         }
+    }
+
+    /**
+     * 상태이상 데이터를 정의합니다.
+     */
+    static STATUS_EFFECT_DATA = {
+        'bleeding': { name: '출혈', effect: '매 턴 최대 체력의 5% 감소', class: 'status-dot' },
+        'burn': { name: '화상', effect: '매 턴 최대 체력의 5% 감소', class: 'status-dot' },
+        'poison': { name: '중독', effect: '매 턴 최대 체력의 3% 감소', class: 'status-dot' },
+        'curse': { name: '저주', effect: '매 턴 최대 체력의 7% 감소', class: 'status-dot' },
+        'stun': { name: '기절', effect: '행동 불능', class: 'status-cc' },
+        'sleep': { name: '수면', effect: '행동 불능', class: 'status-cc' },
+        'freeze': { name: '빙결', effect: '행동 불능', class: 'status-cc' },
+        'electrocution': { name: '감전', effect: '행동 불능', class: 'status-cc' },
+        'fear': { name: '공포', effect: '공격력 30% 감소', class: 'status-debuff' },
+        'weaken': { name: '약화', effect: '방어력 30% 감소', class: 'status-debuff' },
+        'slow': { name: '둔화', effect: '회피율 15% 감소', class: 'status-debuff' }
+    };
+
+    /**
+     * 플레이어와 몬스터의 상태이상을 화면에 렌더링합니다.
+     */
+    renderStatusEffects() {
+        const pList = document.getElementById('player-status-list');
+        const mList = document.getElementById('monster-status-list');
+        const mContainer = document.getElementById('monster-status-container');
+        if (!pList || !mList) return;
+
+        pList.innerHTML = '';
+        mList.innerHTML = '';
+
+        // 플레이어 상태이상 렌더링 (버프도 포함하여 렌더링 가능하지만 여기선 상태이상 위주)
+        if (this.currentBattle) {
+            // 버프 먼저 표시
+            if (this.currentBattle.activeBuffs) {
+                this.currentBattle.activeBuffs.forEach(b => {
+                    const span = document.createElement('span');
+                    span.className = 'buff-item';
+                    span.innerText = `${b.name} (${b.duration}턴)`;
+                    pList.appendChild(span);
+                });
+            }
+
+            // 상태이상 표시
+            if (this.currentBattle.playerStatusEffects) {
+                this.currentBattle.playerStatusEffects.forEach(s => {
+                    pList.appendChild(this.createStatusItem(s));
+                });
+            }
+
+            // 몬스터 상태이상 표시
+            if (this.currentBattle.monsterStatusEffects) {
+                mContainer.style.display = 'block';
+                document.getElementById('monster-status-label').innerText = `${this.currentBattle.monster.name}`;
+                this.currentBattle.monsterStatusEffects.forEach(s => {
+                    mList.appendChild(this.createStatusItem(s));
+                });
+            } else {
+                mContainer.style.display = 'none';
+            }
+        } else {
+            mContainer.style.display = 'none';
+        }
+    }
+
+    createStatusItem(s) {
+        const data = Game.STATUS_EFFECT_DATA[s.type];
+        if (!data) return document.createElement('div');
+
+        const div = document.createElement('div');
+        div.className = `status-item ${data.class}`;
+        div.innerHTML = `
+            <div class="status-item-header">
+                <span class="status-name status-${s.type}">${data.name}</span>
+                <span class="status-turns">${s.duration}T</span>
+            </div>
+            <div class="status-effect">${data.effect}</div>
+        `;
+        return div;
     }
 
     /**
@@ -1234,6 +1314,8 @@ class Game {
             dungeon: dg,
             skillCooldowns: {},
             activeBuffs: [],
+            playerStatusEffects: [],
+            monsterStatusEffects: [],
             turnCount: 0
         };
 
@@ -1261,6 +1343,7 @@ class Game {
         document.getElementById('monster-hp-cur').innerText = Math.ceil(Math.max(0, m.hp));
         document.getElementById('monster-hp-max').innerText = Math.ceil(m.hpMax);
         document.getElementById('monster-hp-bar').style.width = (Math.max(0, m.hp) / m.hpMax * 100) + '%';
+        this.renderStatusEffects();
     }
 
 
@@ -1380,7 +1463,7 @@ class Game {
                     this.log(`[스킬 사용] ${skill.name}!`, 'system');
                     if (skill.mult) d = Math.max(1, (atkStat * skill.mult) - m.def);
 
-                    if (skill.id === 'ws3' && Math.random() < 0.2) b.monsterStunned = true;
+                    if (skill.id === 'ws3' && Math.random() < 0.2) this.applyStatusEffect('monster', 'stun', 1);
                     if (skill.id === 'ws4') b.activeBuffs.push({ type: 'ironWall', name: '철벽', duration: 3 });
                     if (skill.id === 'ws5') b.activeBuffs.push({ type: 'retribution', name: '심판', duration: 3 });
                     if (skill.id === 'ws7') d = Math.max(1, (atkStat * skill.mult) - (m.def * 0.5));
@@ -1390,7 +1473,7 @@ class Game {
                     if (skill.id === 'ms3') b.activeBuffs.push({ type: 'frozenSpear', name: '둔화', duration: 2 });
                     if (skill.id === 'ms4') b.activeBuffs.push({ type: 'manaShield', name: '실드', duration: 99 });
                     if (skill.id === 'ms5') b.activeBuffs.push({ type: 'timeRift', name: '파열', duration: 2 });
-                    if (skill.id === 'ms7') b.activeBuffs.push({ type: 'burn', name: '화상', duration: 3 });
+                    if (skill.id === 'ms7') this.applyStatusEffect('monster', 'burn', 3);
                     if (skill.id === 'ms8') b.activeBuffs.push({ type: 'phaseShift', name: '위상', duration: 1 });
                     if (skill.id === 'ms10') {
                         d = (atkStat * skill.mult) + (p.mp * 2);
@@ -1413,11 +1496,14 @@ class Game {
 
         if (m.hp <= 0) return this.handleMonsterDeath();
 
-        let mStunned = b.monsterStunned;
-        b.monsterStunned = false;
+        // 플레이어 행동불능 체크
+        if (this.isIncapacitated('player')) {
+            this.log('상태이상으로 인해 행동할 수 없습니다!', 'lose');
+        }
 
-        if (mStunned) {
-            this.log(`${m.name}은(는) 기절하여 행동하지 못합니다!`, 'system');
+        // 몬스터 행동불능 체크
+        if (this.isIncapacitated('monster')) {
+            this.log(`${m.name}은(는) 상태이상으로 인해 행동하지 못합니다!`, 'system');
         } else {
             let pEva = p.eva || 0;
             if (b.activeBuffs.some(buff => buff.type === 'phaseShift')) pEva = 100;
@@ -1446,6 +1532,15 @@ class Game {
                     p.hp -= md;
                     this.log(`${m.name}의 공격! ${md} 피해.`, 'lose');
 
+                    // 몬스터의 상태이상 부여 체크
+                    if (m.statusEffects) {
+                        m.statusEffects.forEach(se => {
+                            if (Math.random() < se.chance) {
+                                this.applyStatusEffect('player', se.type, se.duration);
+                            }
+                        });
+                    }
+
                     let counterChance = 0;
                     let isRetribution = false;
                     if (b.activeBuffs.some(buff => buff.type === 'ironWall')) counterChance += 0.3;
@@ -1473,6 +1568,39 @@ class Game {
         this.endOfTurnProcessing();
     }
 
+    /**
+    * 상태이상을 부여합니다.
+    */
+    applyStatusEffect(target, type, duration) {
+        const b = this.currentBattle;
+        if (!b) return;
+
+        const list = target === 'player' ? b.playerStatusEffects : b.monsterStatusEffects;
+        const data = Game.STATUS_EFFECT_DATA[type];
+
+        const existing = list.find(s => s.type === type);
+        if (existing) {
+            existing.duration = Math.max(existing.duration, duration);
+        } else {
+            list.push({ type, duration });
+            const targetName = target === 'player' ? '플레이어' : b.monster.name;
+            this.log(`[상태이상] ${targetName}이(가) <strong>${data.name}</strong> 상태에 빠졌습니다!`, 'lose');
+        }
+        this.updateUI();
+    }
+
+    /**
+     * 행동불능 상태인지 체크합니다.
+     */
+    isIncapacitated(target) {
+        const b = this.currentBattle;
+        if (!b) return false;
+
+        const list = target === 'player' ? b.playerStatusEffects : b.monsterStatusEffects;
+        const ccTypes = ['stun', 'sleep', 'freeze', 'electrocution'];
+        return list.some(s => ccTypes.includes(s.type));
+    }
+
     handleMonsterDeath() {
         const bData = this.currentBattle;
         const bType = bData.type;
@@ -1493,10 +1621,37 @@ class Game {
         const p = this.gameState.player;
         const b = this.currentBattle; const m = b.monster;
 
-        if (b.activeBuffs.some(buff => buff.type === 'burn')) {
-            let bDmg = Math.floor(m.hpMax * 0.05);
-            m.hp -= bDmg;
-            this.log(`[화상] ${m.name}이(가) ${bDmg} 피해를 입었습니다.`, 'crit');
+        // 플레이어 도트 데미지 처리
+        if (b.playerStatusEffects) {
+            b.playerStatusEffects.forEach(s => {
+                let dotDmg = 0;
+                if (s.type === 'bleeding') dotDmg = Math.floor(p.hpMax * 0.05);
+                if (s.type === 'burn') dotDmg = Math.floor(p.hpMax * 0.05);
+                if (s.type === 'poison') dotDmg = Math.floor(p.hpMax * 0.03);
+                if (s.type === 'curse') dotDmg = Math.floor(p.hpMax * 0.07);
+
+                if (dotDmg > 0) {
+                    p.hp -= dotDmg;
+                    this.log(`[${Game.STATUS_EFFECT_DATA[s.type].name}] 플레이어가 ${dotDmg} 피해를 입었습니다.`, 'lose');
+                }
+            });
+            if (p.hp <= 0) return this.death();
+        }
+
+        // 몬스터 도트 데미지 처리
+        if (b.monsterStatusEffects) {
+            b.monsterStatusEffects.forEach(s => {
+                let dotDmg = 0;
+                if (s.type === 'bleeding') dotDmg = Math.floor(m.hpMax * 0.05);
+                if (s.type === 'burn') dotDmg = Math.floor(m.hpMax * 0.05);
+                if (s.type === 'poison') dotDmg = Math.floor(m.hpMax * 0.03);
+                if (s.type === 'curse') dotDmg = Math.floor(m.hpMax * 0.07);
+
+                if (dotDmg > 0) {
+                    m.hp -= dotDmg;
+                    this.log(`[${Game.STATUS_EFFECT_DATA[s.type].name}] ${m.name}이(가) ${dotDmg} 피해를 입었습니다.`, 'crit');
+                }
+            });
             this.updateMonsterUI();
             if (m.hp <= 0) return this.handleMonsterDeath();
         }
@@ -1524,8 +1679,19 @@ class Game {
             if (b.skillCooldowns[k] > 0) b.skillCooldowns[k]--;
         }
 
+        // 지속 시간 감소 및 만료 처리
         b.activeBuffs.forEach(buff => buff.duration--);
         b.activeBuffs = b.activeBuffs.filter(buff => buff.duration > 0 || buff.type === 'manaShield');
+
+        if (b.playerStatusEffects) {
+            b.playerStatusEffects.forEach(s => s.duration--);
+            b.playerStatusEffects = b.playerStatusEffects.filter(s => s.duration > 0);
+        }
+
+        if (b.monsterStatusEffects) {
+            b.monsterStatusEffects.forEach(s => s.duration--);
+            b.monsterStatusEffects = b.monsterStatusEffects.filter(s => s.duration > 0);
+        }
 
         b.turnCount++;
         this.updateStats();
