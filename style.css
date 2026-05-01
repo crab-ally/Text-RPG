@@ -1480,6 +1480,84 @@ body.menu-open {
     color: var(--text-dim);
 }
 
+.status-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-owner {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-left: 3px solid var(--accent-purple);
+    padding-left: 8px;
+}
+
+.status-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.status-item {
+    font-size: 0.7rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 80px;
+    animation: fadeIn 0.3s ease;
+}
+
+.status-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-name {
+    font-weight: 700;
+    color: white;
+}
+
+.status-turns {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    color: var(--accent-cyan);
+}
+
+.status-effect {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    line-height: 1.2;
+}
+
+/* 상태이상 종류별 색상 */
+.status-dot { border-color: #ff4d4d; background: rgba(255, 77, 77, 0.1); }
+.status-cc { border-color: #4d94ff; background: rgba(77, 148, 255, 0.1); }
+.status-debuff { border-color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
+
+/* 개별 상태이상 스타일 */
+.status-bleeding { color: #ff4d4d; }
+.status-burn { color: #ff884d; }
+.status-poison { color: #a335ee; }
+.status-curse { color: #8a2be2; }
+.status-stun, .status-sleep, .status-freeze, .status-electrocution { color: #4d94ff; }
+.status-fear, .status-weaken, .status-slow { color: #9090a0; }
+
 .buff-item {
     font-size: 0.7rem;
     background: rgba(123, 79, 255, 0.2);
@@ -1489,4 +1567,5 @@ body.menu-open {
     margin-right: 5px;
     margin-bottom: 5px;
     display: inline-block;
-}
+}
+
