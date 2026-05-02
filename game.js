@@ -24,7 +24,8 @@ class Game {
                 unlockedRecipes: [],                        // 사용 완료된 레시피 (하얀색 표시)
                 discoveredRecipes: [],                      // 보유 중인 레시피 (노란색 표시)
                 materials: {},                              // 몬스터 전리품 인벤토리
-                activeStatusEffects: []                     // [NEW] 플레이어 상시 상태이상 (전투 외에도 유지될 수 있음)
+                activeStatusEffects: [],                    // [NEW] 플레이어 상시 상태이상 (전투 외에도 유지될 수 있음)
+                skillLevels: {}                             // [NEW] 스킬별 강화 수치 (id: level)
             },
             world: {
                 currentLocation: 'town1', day: 1, inflation: 1.0, // 현재 장소, 날짜, 물가 상승률
@@ -43,6 +44,7 @@ class Game {
      */
     init() {
         this.setupEventListeners();
+        this.recalculateMaxStats();
         this.updateStats();
         this.updateUI();
     }
@@ -179,7 +181,13 @@ class Game {
     loadGame(slot) {
         const saved = localStorage.getItem(`void_abyss_save_${slot}`);
         if (saved) {
-            try { this.gameState = JSON.parse(saved); } catch (e) { console.error("Save load failed", e); }
+            try { 
+                this.gameState = JSON.parse(saved); 
+                // [NEW] 기존 세이브 데이터에 skillLevels가 없는 경우 초기화
+                if (!this.gameState.player.skillLevels) {
+                    this.gameState.player.skillLevels = {};
+                }
+            } catch (e) { console.error("Save load failed", e); }
         }
     }
 
@@ -483,20 +491,22 @@ class Game {
             p.def = Math.floor(p.def * 1.5);
             p.eva = Math.max(0, p.eva - 5);
 
-            // 투쟁심 (Lv 60)
+            // 투쟁심 (Lv 60) - 공 20% + 강화당 5%, 치명타 15% + 강화당 2%
             if (p.level >= 60 && (p.hp / p.hpMax) <= 0.5) {
-                p.atk = Math.floor(p.atk * 1.2);
-                p.cri += 15;
+                const rLv = p.skillLevels['ws6'] || 0;
+                p.atk = Math.floor(p.atk * (1.2 + rLv * 0.05));
+                p.cri += (15 + rLv * 2);
             }
         } else if (p.job === '마법사') {
             p.mag = p.atk; // 공격력 -> 마력 치환
             p.atk = 0;
             p.def = Math.floor(p.def * 0.7);
 
-            // 집중 (Lv 60)
+            // 집중 (Lv 60) - 마력 15% + 강화당 5%, 치명타 15% + 강화당 2%
             if (p.level >= 60 && (p.mp / p.mpMax) >= 0.7) {
-                p.mag = Math.floor(p.mag * 1.15);
-                p.cri += 15;
+                const rLv = p.skillLevels['ms6'] || 0;
+                p.mag = Math.floor(p.mag * (1.15 + rLv * 0.05));
+                p.cri += (15 + rLv * 2);
             }
         }
 
@@ -598,6 +608,36 @@ class Game {
             <div class="status-effect">${data.effect}</div>
         `;
         return div;
+    }
+
+    /**
+     * [NEW] 플레이어의 최대 HP/MP를 직업, 레벨, 강화 수치에 따라 재계산합니다.
+     */
+    recalculateMaxStats() {
+        const p = this.gameState.player;
+        
+        // 기본치: 레벨당 HP 20, MP 10 증가
+        let baseHp = 100 + (p.level - 1) * 20;
+        let baseMp = 50 + (p.level - 1) * 10;
+
+        // 직업 보너스
+        if (p.job === '전사') baseHp = Math.floor(baseHp * 1.5);
+        if (p.job === '마법사') baseMp = Math.floor(baseMp * 1.5);
+
+        // 스킬 보너스
+        if (p.job === '전사' && p.level >= 20) {
+            const rLv = p.skillLevels['ws2'] || 0;
+            baseHp = Math.floor(baseHp * (1.2 + rLv * 0.05));
+        }
+        if (p.job === '마법사' && p.level >= 20) {
+            const rLv = p.skillLevels['ms2'] || 0;
+            baseMp = Math.floor(baseMp * (1.2 + rLv * 0.05));
+        }
+
+        p.hpMax = baseHp;
+        p.mpMax = baseMp;
+        p.hp = Math.min(p.hp, p.hpMax);
+        p.mp = Math.min(p.mp, p.mpMax);
     }
 
     /**
@@ -703,6 +743,7 @@ class Game {
         else if (b === 'blacksmith') this.openBlacksmith();
         else if (b === 'alchemy') this.openAlchemyLab();
         else if (b === 'quest') this.openQuest();
+        else if (b === 'training') this.openTraining();
         else this.log(`${this.getBuildingName(b)}은(는) 구현 중입니다.`, 'system');
     }
 
@@ -759,6 +800,93 @@ class Game {
             </div>
         `;
         this.showModal('전직소', h);
+    }
+
+    /**
+     * 훈련소(수련장) 모달을 엽니다.
+     * 모든 스킬을 표시하고, 레벨 조건에 따라 활성화/비활성화하며 강화를 지원합니다.
+     */
+    openTraining() {
+        const p = this.gameState.player;
+        const skills = p.job === '전사' ? GAME_DATA.WARRIOR_SKILLS : (p.job === '마법사' ? GAME_DATA.MAGE_SKILLS : []);
+        
+        if (skills.length === 0) {
+            this.showModal('훈련소', '<p>전직 후에 이용 가능합니다.</p>');
+            return;
+        }
+
+        let h = `
+            <div style="text-align:center; margin-bottom: 20px;">
+                <h3 style="color:var(--accent-cyan); font-family:'Orbitron', sans-serif;">스킬 연마</h3>
+                <p style="color:var(--text-dim); font-size:0.85rem;">획득한 스킬을 강화하여 위력을 높일 수 있습니다. (최대 3강)</p>
+            </div>
+            <div class="shop-grid">
+        `;
+
+        skills.forEach(s => {
+            const isUnlocked = p.level >= s.reqLv;
+            const currentLv = p.skillLevels[s.id] || 0;
+            const skillTier = Math.floor(s.reqLv / 10);
+            const cost = Math.floor(2000 * Math.pow(2.5, skillTier - 1) * (currentLv + 1));
+            
+            h += `
+                <div class="shop-item ${!isUnlocked ? 'locked' : ''}" style="${!isUnlocked ? 'opacity: 0.5; filter: grayscale(1);' : ''}">
+                    <div class="shop-item-info">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="shop-item-name">${s.name}</span>
+                            <span style="font-size:0.7rem; color:var(--gold-color); font-weight:700;">+${currentLv}</span>
+                        </div>
+                        <span class="shop-item-detail">${s.desc}</span>
+                        <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+                            ${s.costVal > 0 ? `${s.costType.toUpperCase()} ${s.costVal} 소모` : '패시브 스킬'} | 요구 Lv.${s.reqLv}
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                        ${isUnlocked ? (currentLv < 3 ? `
+                            <span class="shop-item-price" style="font-size:0.8rem;">${cost.toLocaleString()}G</span>
+                            <button onclick="game.reinforceSkill('${s.id}')" style="padding: 4px 10px; font-size:0.8rem;">강화</button>
+                        ` : `
+                            <span style="color:var(--accent-cyan); font-weight:700; font-size:0.8rem;">최대 강화</span>
+                        `) : `
+                            <span style="color:var(--text-dim); font-size:0.8rem;">잠김</span>
+                        `}
+                    </div>
+                </div>
+            `;
+        });
+
+        h += '</div>';
+        this.showModal('훈련소', h);
+    }
+
+    /**
+     * 특정 스킬을 강화합니다.
+     */
+    reinforceSkill(skillId) {
+        const p = this.gameState.player;
+        const skills = p.job === '전사' ? GAME_DATA.WARRIOR_SKILLS : GAME_DATA.MAGE_SKILLS;
+        const skill = skills.find(s => s.id === skillId);
+        if (!skill) return;
+
+        const currentLv = p.skillLevels[skillId] || 0;
+        if (currentLv >= 3) { alert('이미 최대 강화 상태입니다.'); return; }
+        if (p.level < skill.reqLv) { alert('아직 획득하지 못한 스킬입니다.'); return; }
+
+        const skillTier = Math.floor(skill.reqLv / 10);
+        const cost = Math.floor(2000 * Math.pow(2.5, skillTier - 1) * (currentLv + 1));
+
+        if (p.gold < cost) {
+            alert('골드가 부족합니다.');
+            return;
+        }
+
+        p.gold -= cost;
+        p.skillLevels[skillId] = currentLv + 1;
+        
+        this.recalculateMaxStats();
+        this.log(`<strong>${skill.name}</strong> 스킬을 +${p.skillLevels[skillId]}로 강화했습니다!`, 'victory');
+        this.updateUI();
+        this.openTraining(); // UI 갱신
     }
 
     changeJob(job) {
@@ -823,7 +951,8 @@ class Game {
                         return Number(i.tier) === potionTier && (i.hp != null || i.mp != null);
                     }
                     // 전설(Tier 5) 등급 까지만 판매, 신화(Tier 6) 이상 제외
-                    return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) <= Math.min(tier, 5);
+                    // [MOD] 현재 마을 티어와 정확히 일치하는 아이템만 판매
+                    return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
                 }).forEach(it => {
                     const pr = Math.floor(it.price * inf);
                     const isBought = (cat !== 'CONSUMABLES' && this.purchasedInSession.has(it.id));
@@ -1483,6 +1612,12 @@ class Game {
 
                 d = Math.floor(d * playerDmgMult);
 
+                // [NEW] 스킬 강화 보너스 적용 (강화 레벨당 대미지 15% 복리 증가)
+                if (skill) {
+                    const rLv = p.skillLevels[skill.id] || 0;
+                    d = Math.floor(d * Math.pow(1.15, rLv));
+                }
+
                 let criChance = p.cri;
                 if (isCriticalShift) criChance += 50;
 
@@ -1822,7 +1957,8 @@ class Game {
      */
     levelUp() {
         const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.15);
-        p.hpMax += 20; p.mpMax += 10; p.hp = p.hpMax; p.mp = p.mpMax; this.updateStats();
+        this.recalculateMaxStats();
+        p.hp = p.hpMax; p.mp = p.mpMax; this.updateStats();
         this.log(`LEVEL UP! ${p.level} 레벨 달성!`, 'system');
     }
 
