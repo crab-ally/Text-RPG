@@ -181,8 +181,8 @@ class Game {
     loadGame(slot) {
         const saved = localStorage.getItem(`void_abyss_save_${slot}`);
         if (saved) {
-            try { 
-                this.gameState = JSON.parse(saved); 
+            try {
+                this.gameState = JSON.parse(saved);
                 // [NEW] 기존 세이브 데이터에 skillLevels가 없는 경우 초기화
                 if (!this.gameState.player.skillLevels) {
                     this.gameState.player.skillLevels = {};
@@ -615,7 +615,7 @@ class Game {
      */
     recalculateMaxStats() {
         const p = this.gameState.player;
-        
+
         // 기본치: 레벨당 HP 20, MP 10 증가
         let baseHp = 100 + (p.level - 1) * 20;
         let baseMp = 50 + (p.level - 1) * 10;
@@ -809,7 +809,7 @@ class Game {
     openTraining() {
         const p = this.gameState.player;
         const skills = p.job === '전사' ? GAME_DATA.WARRIOR_SKILLS : (p.job === '마법사' ? GAME_DATA.MAGE_SKILLS : []);
-        
+
         if (skills.length === 0) {
             this.showModal('훈련소', '<p>전직 후에 이용 가능합니다.</p>');
             return;
@@ -828,7 +828,7 @@ class Game {
             const currentLv = p.skillLevels[s.id] || 0;
             const skillTier = Math.floor(s.reqLv / 10);
             const cost = Math.floor(2000 * Math.pow(2.5, skillTier - 1) * (currentLv + 1));
-            
+
             h += `
                 <div class="shop-item ${!isUnlocked ? 'locked' : ''}" style="${!isUnlocked ? 'opacity: 0.5; filter: grayscale(1);' : ''}">
                     <div class="shop-item-info">
@@ -882,7 +882,7 @@ class Game {
 
         p.gold -= cost;
         p.skillLevels[skillId] = currentLv + 1;
-        
+
         this.recalculateMaxStats();
         this.log(`<strong>${skill.name}</strong> 스킬을 +${p.skillLevels[skillId]}로 강화했습니다!`, 'victory');
         this.updateUI();
@@ -1300,7 +1300,18 @@ class Game {
             isTranscendenceBoss: true
         };
 
-        this.currentBattle = { monster: m, isBoss: true, type: 'transcendence', step, dungeon: dg };
+        this.currentBattle = {
+            monster: m,
+            isBoss: true,
+            type: 'transcendence',
+            step,
+            dungeon: dg,
+            skillCooldowns: {},
+            activeBuffs: [],
+            playerStatusEffects: [],
+            monsterStatusEffects: [],
+            turnCount: 0
+        };
         document.getElementById('monster-status').classList.remove('hidden');
         document.getElementById('monster-name').innerHTML = `<span class="grade-transcend">${m.name}</span>`;
         this.updateMonsterUI();
