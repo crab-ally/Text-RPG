@@ -1463,9 +1463,15 @@ class Game {
         const mStatus = document.getElementById('monster-status');
         mStatus.classList.remove('hidden');
 
+        // [NEW] 몬스터 레벨 계산 (일반 몬스터도 던전 진행도에 따라 레벨 부여)
+        const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
+        const minLv = parseInt((town.levelRange || '').match(/\d+/)?.[0] || '1', 10);
+        const maxLv = parseInt((town.levelRange || '').match(/~\s*(\d+)/)?.[1] || '20', 10);
+        
+        m.level = m.isMidBoss ? dg.midBossLv : (m.isBoss ? dg.bossLv : Math.floor(minLv + (step / (dg.steps || 1)) * (maxLv - minLv)));
+
         let displayName = m.name;
-        const lv = m.isMidBoss ? dg.midBossLv : (m.isBoss ? dg.bossLv : null);
-        if (lv) displayName += ` <small style="color:var(--text-dim); font-size:0.7rem;">(Lv.${lv})</small>`;
+        displayName += ` <small style="color:var(--text-dim); font-size:0.7rem;">(Lv.${m.level})</small>`;
 
         document.getElementById('monster-name').innerHTML = displayName;
         this.updateMonsterUI();
@@ -1777,6 +1783,13 @@ class Game {
                 if (s.type === 'curse') dotDmg = Math.floor(p.hpMax * 0.07);
 
                 if (dotDmg > 0) {
+                    // [NEW] 레벨 차에 따른 데미지 감소 (플레이어 레벨이 더 높을 때)
+                    const lvDiff = p.level - (m.level || 1);
+                    if (lvDiff > 0) {
+                        const reduction = Math.min(0.9, lvDiff * 0.02);
+                        dotDmg = Math.floor(dotDmg * (1 - reduction));
+                    }
+                    
                     p.hp -= dotDmg;
                     this.log(`[${Game.STATUS_EFFECT_DATA[s.type].name}] 플레이어가 ${dotDmg} 피해를 입었습니다.`, 'lose');
                 }
@@ -1794,6 +1807,13 @@ class Game {
                 if (s.type === 'curse') dotDmg = Math.floor(m.hpMax * 0.07);
 
                 if (dotDmg > 0) {
+                    // [NEW] 레벨 차에 따른 데미지 감소 (몬스터 레벨이 더 높을 때)
+                    const lvDiff = (m.level || 1) - p.level;
+                    if (lvDiff > 0) {
+                        const reduction = Math.min(0.9, lvDiff * 0.02);
+                        dotDmg = Math.floor(dotDmg * (1 - reduction));
+                    }
+
                     m.hp -= dotDmg;
                     this.log(`[${Game.STATUS_EFFECT_DATA[s.type].name}] ${m.name}이(가) ${dotDmg} 피해를 입었습니다.`, 'crit');
                 }
