@@ -68,46 +68,46 @@ const GAME_DATA = {
 
     MONSTERS: {
         zone1: [
-            { name: '슬라임', hp: 130, atk: 15, def: 5, xp: 23, gold: 15, loots: ['슬라임 젤리'], eva: 5 },
-            { name: '숲 거미', hp: 240, atk: 22, def: 8, xp: 40, gold: 30, loots: ['거미의 독샘'], eva: 8, statusEffects: [{ type: 'poison', chance: 0.2, duration: 3 }] },
-            { name: '슬라임 퀸', hp: 700, atk: 40, def: 15, xp: 170, gold: 180, loots: ['왕관 조각'], isMidBoss: true, eva: 10 },
-            { name: '킹 슬라임', hp: 1200, atk: 60, def: 25, xp: 580, gold: 550, loots: ['거대 핵'], isBoss: true, eva: 15 }
+            { name: '슬라임', hp: 110, atk: 12, def: 4, xp: 28, gold: 18, loots: ['슬라임 젤리'], eva: 3 },
+            { name: '숲 거미', hp: 200, atk: 18, def: 7, xp: 48, gold: 36, loots: ['거미의 독샘'], eva: 6, statusEffects: [{ type: 'poison', chance: 0.15, duration: 3 }] },
+            { name: '슬라임 퀸', hp: 600, atk: 34, def: 12, xp: 200, gold: 216, loots: ['왕관 조각'], isMidBoss: true, eva: 8 },
+            { name: '킹 슬라임', hp: 1020, atk: 50, def: 22, xp: 700, gold: 660, loots: ['거대 핵'], isBoss: true, eva: 12 }
         ],
         zone2: [
-            { name: '돌 괴물', hp: 700, atk: 80, def: 35, xp: 140, gold: 120, loots: ['암석 파편'], eva: 5 },
-            { name: '미믹', hp: 500, atk: 110, def: 25, xp: 175, gold: 750, loots: ['미믹의 이빨'], eva: 15 },
-            { name: '골렘 가디언', hp: 2500, atk: 150, def: 75, xp: 920, gold: 1000, loots: ['강철 원석'], isMidBoss: true, eva: 12, statusEffects: [{ type: 'stun', chance: 0.2, duration: 1 }] },
-            { name: '강철 기사', hp: 4800, atk: 180, def: 90, xp: 2900, gold: 3500, loots: ['빛나는 강철'], isBoss: true, eva: 15, statusEffects: [{ type: 'stun', chance: 0.15, duration: 1 }] }
+            { name: '돌 괴물', hp: 600, atk: 68, def: 30, xp: 168, gold: 144, loots: ['암석 파편'], eva: 4 },
+            { name: '미믹', hp: 425, atk: 94, def: 22, xp: 210, gold: 900, loots: ['미믹의 이빨'], eva: 12 },
+            { name: '골렘 가디언', hp: 2100, atk: 128, def: 65, xp: 1100, gold: 1200, loots: ['강철 원석'], isMidBoss: true, eva: 10, statusEffects: [{ type: 'stun', chance: 0.15, duration: 1 }] },
+            { name: '강철 기사', hp: 4100, atk: 153, def: 80, xp: 3480, gold: 4200, loots: ['빛나는 강철'], isBoss: true, eva: 12, statusEffects: [{ type: 'stun', chance: 0.1, duration: 1 }] }
         ],
         zone3: [
-            { name: '원령', hp: 2400, atk: 260, def: 100, xp: 700, gold: 650, loots: ['유령의 혼'], eva: 15, statusEffects: [{ type: 'curse', chance: 0.2, duration: 3 }] },
-            { name: '녹슨 검객', hp: 1600, atk: 350, def: 150, xp: 630, gold: 550, loots: ['녹슨 칼날'], eva: 12 },
-            { name: '심해의 공포', hp: 8500, atk: 550, def: 250, xp: 3500, gold: 3200, loots: ['거대 촉수'], isMidBoss: true, eva: 15, statusEffects: [{ type: 'fear', chance: 0.3, duration: 3 }] },
-            { name: '해골 선장', hp: 14500, atk: 540, def: 280, xp: 11500, gold: 14000, loots: ['부러진 나침반'], isBoss: true, eva: 18 }
+            { name: '원령', hp: 2040, atk: 220, def: 90, xp: 840, gold: 780, loots: ['유령의 혼'], eva: 12, statusEffects: [{ type: 'curse', chance: 0.15, duration: 3 }] },
+            { name: '녹슨 검객', hp: 1360, atk: 298, def: 135, xp: 756, gold: 660, loots: ['녹슨 칼날'], eva: 10 },
+            { name: '심해의 공포', hp: 7200, atk: 468, def: 212, xp: 4200, gold: 3840, loots: ['거대 촉수'], isMidBoss: true, eva: 12, statusEffects: [{ type: 'fear', chance: 0.25, duration: 3 }] },
+            { name: '해골 선장', hp: 12300, atk: 460, def: 240, xp: 13800, gold: 16800, loots: ['부러진 나침반'], isBoss: true, eva: 15 }
         ],
         zone4: [
-            { name: '가고일', hp: 8000, atk: 1000, def: 450, xp: 2900, gold: 2500, loots: ['돌의 날개'], eva: 12 },
-            { name: '타락한 사제', hp: 11000, atk: 1300, def: 650, xp: 4000, gold: 4500, loots: ['검은 성서'], eva: 15, statusEffects: [{ type: 'curse', chance: 0.3, duration: 3 }] },
-            { name: '가시 지옥', hp: 28000, atk: 1700, def: 750, xp: 17500, gold: 18000, loots: ['피묻은 가시'], isMidBoss: true, eva: 18, statusEffects: [{ type: 'bleeding', chance: 0.3, duration: 3 }] },
-            { name: '파멸의 천사', hp: 45000, atk: 1800, def: 800, xp: 58000, gold: 65000, loots: ['타락한 깃털'], isBoss: true, eva: 20, statusEffects: [{ type: 'weaken', chance: 0.2, duration: 3 }] }
+            { name: '가고일', hp: 6800, atk: 850, def: 400, xp: 3480, gold: 3000, loots: ['돌의 날개'], eva: 10 },
+            { name: '타락한 사제', hp: 9350, atk: 1100, def: 585, xp: 4800, gold: 5400, loots: ['검은 성서'], eva: 12, statusEffects: [{ type: 'curse', chance: 0.25, duration: 3 }] },
+            { name: '가시 지옥', hp: 23800, atk: 1445, def: 640, xp: 21000, gold: 21600, loots: ['피묻은 가시'], isMidBoss: true, eva: 15, statusEffects: [{ type: 'bleeding', chance: 0.25, duration: 3 }] },
+            { name: '파멸의 천사', hp: 38200, atk: 1530, def: 680, xp: 69600, gold: 78000, loots: ['타락한 깃털'], isBoss: true, eva: 17, statusEffects: [{ type: 'weaken', chance: 0.15, duration: 3 }] }
         ],
         zone5: [
-            { name: '에이션트 웜', hp: 35000, atk: 3600, def: 2000, xp: 17500, gold: 18000, loots: ['오래된 껍질'], eva: 10 },
-            { name: '에이션트 드레이크', hp: 100000, atk: 6600, def: 4000, xp: 290000, gold: 150000, loots: ['마른 비늘'], isMidBoss: true, eva: 20, statusEffects: [{ type: 'burn', chance: 0.2, duration: 3 }] },
-            { name: '드래곤 로드', hp: 140000, atk: 7200, def: 4500, xp: 1150000, gold: 750000, loots: ['용의 핵심'], isBoss: true, eva: 30, statusEffects: [{ type: 'burn', chance: 0.3, duration: 3 }] }
+            { name: '에이션트 웜', hp: 29750, atk: 3060, def: 1800, xp: 21000, gold: 21600, loots: ['오래된 껍질'], eva: 8 },
+            { name: '에이션트 드레이크', hp: 85000, atk: 5610, def: 3400, xp: 348000, gold: 180000, loots: ['마른 비늘'], isMidBoss: true, eva: 17, statusEffects: [{ type: 'burn', chance: 0.15, duration: 3 }] },
+            { name: '드래곤 로드', hp: 119000, atk: 6120, def: 3825, xp: 1380000, gold: 900000, loots: ['용의 핵심'], isBoss: true, eva: 25, statusEffects: [{ type: 'burn', chance: 0.25, duration: 3 }] }
         ],
         zone6: [
-            { name: '공허의 망령', hp: 250000, atk: 15000, def: 8000, xp: 500000, gold: 100000, loots: ['공허의 정수'], eva: 25, statusEffects: [{ type: 'slow', chance: 0.2, duration: 3 }] },
-            { name: '심연의 그림자', hp: 800000, atk: 35000, def: 15000, xp: 2500000, gold: 500000, loots: ['심연의 조각'], isMidBoss: true, eva: 35, statusEffects: [{ type: 'sleep', chance: 0.1, duration: 1 }] },
-            { name: '공허의 절대자', hp: 2000000, atk: 80000, def: 40000, xp: 10000000, gold: 2000000, loots: ['공허의 눈'], isBoss: true, eva: 50, statusEffects: [{ type: 'curse', chance: 0.4, duration: 5 }] }
+            { name: '공허의 망령', hp: 212500, atk: 12750, def: 6800, xp: 600000, gold: 120000, loots: ['공허의 정수'], eva: 22, statusEffects: [{ type: 'slow', chance: 0.15, duration: 3 }] },
+            { name: '심연의 그림자', hp: 680000, atk: 29750, def: 12750, xp: 3000000, gold: 600000, loots: ['심연의 조각'], isMidBoss: true, eva: 30, statusEffects: [{ type: 'sleep', chance: 0.08, duration: 1 }] },
+            { name: '공허의 절대자', hp: 1700000, atk: 68000, def: 34000, xp: 12000000, gold: 2400000, loots: ['공허의 눈'], isBoss: true, eva: 42, statusEffects: [{ type: 'curse', chance: 0.3, duration: 4 }] }
         ]
     },
 
     MUTANTS: [
-        { prefix: '강인한', hpMult: 1.5 },
-        { prefix: '광폭한', atkMult: 1.5 },
-        { prefix: '민첩한', evaAdd: 20 },
-        { prefix: '전설의', hpMult: 2.0, atkMult: 2.0, goldMult: 3.0 }
+        { prefix: '강인한', hpMult: 1.3 },
+        { prefix: '광폭한', atkMult: 1.3 },
+        { prefix: '민첩한', evaAdd: 15 },
+        { prefix: '전설의', hpMult: 1.8, atkMult: 1.8, goldMult: 3.0 }
     ],
 
     ITEMS: {
@@ -130,18 +130,18 @@ const GAME_DATA = {
             { id: 'a7', name: '공허의 장막', grade: '초월', tier: 7, def: 12000, price: 0 }
         ],
         CONSUMABLES: [
-            { id: 'p1', name: '희석된 HP 포션', grade: '희석', tier: 1, hp: 70, price: 15 },
-            { id: 'p2', name: '약한 HP포션', grade: '약함', tier: 2, hp: 200, price: 60 },
-            { id: 'p3', name: '농축된 HP 포션', grade: '농축', tier: 3, hp: 700, price: 250 },
-            { id: 'p4', name: '고농축 HP 포션', grade: '고농축', tier: 4, hp: 2500, price: 1000 },
-            { id: 'p5', name: '극농축 HP 포션', grade: '극농축', tier: 5, hp: 8000, price: 6000 },
-            { id: 'p6', name: '순수한 생명수', grade: '순수', tier: 6, hp: 30000, price: 0 },
-            { id: 'mp1', name: '희석된 MP 포션', grade: '희석', tier: 1, mp: 50, price: 30 },
-            { id: 'mp2', name: '약한 MP 포션', grade: '약함', tier: 2, mp: 140, price: 90 },
-            { id: 'mp3', name: '농축된 MP 포션', grade: '농축', tier: 3, mp: 350, price: 300 },
-            { id: 'mp4', name: '고농축 MP 포션', grade: '고농축', tier: 4, mp: 900, price: 1200 },
-            { id: 'mp5', name: '극농축 MP 포션', grade: '극농축', tier: 5, mp: 2500, price: 7000 },
-            { id: 'mp6', name: '순수한 마나수', grade: '순수', tier: 6, mp: 10000, price: 0 }
+            { id: 'p1', name: '희석된 HP 포션', grade: '희석', tier: 1, hp: 80, price: 15 },
+            { id: 'p2', name: '약한 HP포션', grade: '약함', tier: 2, hp: 250, price: 60 },
+            { id: 'p3', name: '농축된 HP 포션', grade: '농축', tier: 3, hp: 850, price: 250 },
+            { id: 'p4', name: '고농축 HP 포션', grade: '고농축', tier: 4, hp: 3000, price: 1000 },
+            { id: 'p5', name: '극농축 HP 포션', grade: '극농축', tier: 5, hp: 9500, price: 6000 },
+            { id: 'p6', name: '순수한 생명수', grade: '순수', tier: 6, hp: 35000, price: 0 },
+            { id: 'mp1', name: '희석된 MP 포션', grade: '희석', tier: 1, mp: 60, price: 30 },
+            { id: 'mp2', name: '약한 MP 포션', grade: '약함', tier: 2, mp: 170, price: 90 },
+            { id: 'mp3', name: '농축된 MP 포션', grade: '농축', tier: 3, mp: 420, price: 300 },
+            { id: 'mp4', name: '고농축 MP 포션', grade: '고농축', tier: 4, mp: 1080, price: 1200 },
+            { id: 'mp5', name: '극농축 MP 포션', grade: '극농축', tier: 5, mp: 3000, price: 7000 },
+            { id: 'mp6', name: '순수한 마나수', grade: '순수', tier: 6, mp: 12000, price: 0 }
         ]
     },
 

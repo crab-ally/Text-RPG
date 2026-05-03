@@ -13,8 +13,8 @@ class Game {
         this.gameState = {
             player: {
                 job: '초보자', mag: 0,                   // 직업 및 마력
-                level: 1, xp: 0, xpNext: 70,               // 레벨 및 경험치 시스템
-                hp: 100, hpMax: 100, mp: 50, mpMax: 50,    // 생명력 및 마력
+                level: 1, xp: 0, xpNext: 80,               // 레벨 및 경험치 시스템
+                hp: 120, hpMax: 120, mp: 60, mpMax: 60,    // 생명력 및 마력
                 atk: 10, def: 5, cri: 5, eva: 5, gold: 500, // 전투 스탯 및 재화
                 equipment: { weapon: null, armor: null, accessory: [null, null, null] }, // 장착 장비
                 inventory: [], skills: [], invMax: 10,       // 소지 아이템, 스킬, 가방 최대 칸수
@@ -477,8 +477,8 @@ class Game {
             return Math.floor(it[stat] * Math.pow(1.15, plus));
         };
 
-        let baseAtk = 10 + (p.level - 1) * 2 + getEqStat(p.equipment.weapon, 'atk') + getEqStat(p.equipment.armor, 'atk');
-        let baseDef = 5 + (p.level - 1) * 1 + getEqStat(p.equipment.weapon, 'def') + getEqStat(p.equipment.armor, 'def');
+        let baseAtk = 10 + (p.level - 1) * 3 + getEqStat(p.equipment.weapon, 'atk') + getEqStat(p.equipment.armor, 'atk');
+        let baseDef = 5 + (p.level - 1) * 2 + getEqStat(p.equipment.weapon, 'def') + getEqStat(p.equipment.armor, 'def');
 
         p.atk = baseAtk;
         p.def = baseDef;
@@ -523,9 +523,9 @@ class Game {
             // 플레이어 상태이상 효과 적용
             if (this.currentBattle.playerStatusEffects) {
                 this.currentBattle.playerStatusEffects.forEach(s => {
-                    if (s.type === 'fear') p.atk = Math.floor(p.atk * 0.7);
-                    if (s.type === 'weaken') p.def = Math.floor(p.def * 0.7);
-                    if (s.type === 'slow') p.eva = Math.max(0, p.eva - 15);
+                    if (s.type === 'fear') p.atk = Math.floor(p.atk * 0.75);
+                    if (s.type === 'weaken') p.def = Math.floor(p.def * 0.75);
+                    if (s.type === 'slow') p.eva = Math.max(0, p.eva - 10);
                 });
             }
         }
@@ -535,17 +535,17 @@ class Game {
      * 상태이상 데이터를 정의합니다.
      */
     static STATUS_EFFECT_DATA = {
-        'bleeding': { name: '출혈', effect: '매 턴 최대 체력의 5% 감소', class: 'status-dot' },
-        'burn': { name: '화상', effect: '매 턴 최대 체력의 5% 감소', class: 'status-dot' },
-        'poison': { name: '중독', effect: '매 턴 최대 체력의 3% 감소', class: 'status-dot' },
-        'curse': { name: '저주', effect: '매 턴 최대 체력의 7% 감소', class: 'status-dot' },
+        'bleeding': { name: '출혈', effect: '매 턴 최대 체력의 4% 감소', class: 'status-dot' },
+        'burn': { name: '화상', effect: '매 턴 최대 체력의 4% 감소', class: 'status-dot' },
+        'poison': { name: '중독', effect: '매 턴 최대 체력의 2% 감소', class: 'status-dot' },
+        'curse': { name: '저주', effect: '매 턴 최대 체력의 5% 감소', class: 'status-dot' },
         'stun': { name: '기절', effect: '행동 불능', class: 'status-cc' },
         'sleep': { name: '수면', effect: '행동 불능', class: 'status-cc' },
         'freeze': { name: '빙결', effect: '행동 불능', class: 'status-cc' },
         'electrocution': { name: '감전', effect: '행동 불능', class: 'status-cc' },
-        'fear': { name: '공포', effect: '공격력 30% 감소', class: 'status-debuff' },
-        'weaken': { name: '약화', effect: '방어력 30% 감소', class: 'status-debuff' },
-        'slow': { name: '둔화', effect: '회피율 15% 감소', class: 'status-debuff' }
+        'fear': { name: '공포', effect: '공격력 25% 감소', class: 'status-debuff' },
+        'weaken': { name: '약화', effect: '방어력 25% 감소', class: 'status-debuff' },
+        'slow': { name: '둔화', effect: '회피율 10% 감소', class: 'status-debuff' }
     };
 
     /**
@@ -616,9 +616,9 @@ class Game {
     recalculateMaxStats() {
         const p = this.gameState.player;
 
-        // 기본치: 레벨당 HP 20, MP 10 증가
-        let baseHp = 100 + (p.level - 1) * 20;
-        let baseMp = 50 + (p.level - 1) * 10;
+        // 기본치: 레벨당 HP 25, MP 12 증가
+        let baseHp = 120 + (p.level - 1) * 25;
+        let baseMp = 60 + (p.level - 1) * 12;
 
         // 직업 보너스
         if (p.job === '전사') baseHp = Math.floor(baseHp * 1.5);
@@ -914,7 +914,7 @@ class Game {
         const p = this.gameState.player; const w = this.gameState.world;
         if (p.gold < cost) { alert('골드 부족'); return; }
         p.gold -= cost; p.hp = p.hpMax; p.mp = p.mpMax; w.day++; w.dungeonDayUsed = false;
-        const tax = Math.floor(p.gold * 0.02); p.gold -= tax; w.inflation *= 1.003;
+        const tax = Math.floor(p.gold * 0.015); p.gold -= tax; w.inflation *= 1.002;
         this.log(`하루가 지났습니다. 세금 ${tax} G가 차감되었습니다.`, 'lose');
         this.closeModal(); this.updateUI(); this.renderTownActions();
     }
@@ -1032,7 +1032,7 @@ class Game {
      * 기본은 구매가의 40%이며, 강화 단계에 따라 복리로 보너스가 붙습니다.
      */
     calculateSellPrice(it, isUnit = false) {
-        const base = (it.price || 0) * 0.4;
+        const base = (it.price || 0) * 0.5;
         const plus = it.plus || 0;
         // 강화 단계당 10%씩 복리 증가
         const unitPrice = Math.floor(base * Math.pow(1.1, plus));
@@ -1222,15 +1222,15 @@ class Game {
         const dg = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).dungeon;
         this.dungeonRestCount++;
 
-        // 30% 확률로 적의 기습 발생
-        if (Math.random() < 0.3) {
+        // 20% 확률로 적의 기습 발생
+        if (Math.random() < 0.2) {
             this.log('--- ! 기습 발생 ! ---', 'death-notice');
             this.log('휴식 중에 몬스터의 기습을 받았습니다.', 'lose');
             this.startBattle(dg, false, step);
         } else {
-            // 휴식 성공 시 HP/MP 20% 회복
-            const recoverHP = Math.floor(p.hpMax * 0.2);
-            const recoverMP = Math.floor(p.mpMax * 0.2);
+            // 휴식 성공 시 HP/MP 25% 회복
+            const recoverHP = Math.floor(p.hpMax * 0.25);
+            const recoverMP = Math.floor(p.mpMax * 0.25);
             p.hp = Math.min(p.hpMax, p.hp + recoverHP);
             p.mp = Math.min(p.mpMax, p.mp + recoverMP);
 
@@ -1260,20 +1260,20 @@ class Game {
         const r = Math.random();
         const dg = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).dungeon;
 
-        if (r < 0.55) {
-            // 55% 확률로 일반 몬스터와 조우
+        if (r < 0.50) {
+            // 50% 확률로 일반 몬스터와 조우
             this.startBattle(dg, false, step);
-        } else if (r < 0.7) {
-            // 15% 확률로 보물상자 발견
+        } else if (r < 0.68) {
+            // 18% 확률로 보물상자 발견
             this.handleTreasureChest(dg, step);
-        } else if (r < 0.845) {
-            // 14.5% 확률로 무작위 이벤트 발생
+        } else if (r < 0.83) {
+            // 15% 확률로 무작위 이벤트 발생
             this.handleRandomEvent(dg, step);
-        } else if (r < 0.85) {
-            // 0.5% 확률로 초월 등급 장비 보스 조우 이벤트
+        } else if (r < 0.84) {
+            // 1% 확률로 초월 등급 장비 보스 조우 이벤트
             this.handleTranscendenceEvent(dg, step);
         } else {
-            // 15% 확률로 평화롭게 지나감
+            // 16% 확률로 평화롭게 지나감
             this.log('길이 고요합니다. 아무 일도 일어나지 않았습니다.', 'system');
             this.exploreLoop(dg, step + 1);
         }
@@ -1435,8 +1435,8 @@ class Game {
             m = { ...normals[Math.floor(Math.random() * normals.length)] };
         }
 
-        // 10% 확률로 특수한 능력치를 가진 뮤턴트 몬스터 출현
-        if (type === 'normal' && !isB && Math.random() < 0.1) {
+        // 8% 확률로 특수한 능력치를 가진 뮤턴트 몬스터 출현
+        if (type === 'normal' && !isB && Math.random() < 0.08) {
             const mut = GAME_DATA.MUTANTS[Math.floor(Math.random() * GAME_DATA.MUTANTS.length)];
             m.name = mut.prefix + ' ' + m.name;
             if (mut.hpMult) m.hp *= mut.hpMult;
@@ -1777,10 +1777,10 @@ class Game {
         if (b.playerStatusEffects) {
             b.playerStatusEffects.forEach(s => {
                 let dotDmg = 0;
-                if (s.type === 'bleeding') dotDmg = Math.floor(p.hpMax * 0.05);
-                if (s.type === 'burn') dotDmg = Math.floor(p.hpMax * 0.05);
-                if (s.type === 'poison') dotDmg = Math.floor(p.hpMax * 0.03);
-                if (s.type === 'curse') dotDmg = Math.floor(p.hpMax * 0.07);
+                if (s.type === 'bleeding') dotDmg = Math.floor(p.hpMax * 0.04);
+                if (s.type === 'burn') dotDmg = Math.floor(p.hpMax * 0.04);
+                if (s.type === 'poison') dotDmg = Math.floor(p.hpMax * 0.02);
+                if (s.type === 'curse') dotDmg = Math.floor(p.hpMax * 0.05);
 
                 if (dotDmg > 0) {
                     // [NEW] 레벨 차에 따른 데미지 감소 (플레이어 레벨이 더 높을 때)
@@ -1801,10 +1801,10 @@ class Game {
         if (b.monsterStatusEffects) {
             b.monsterStatusEffects.forEach(s => {
                 let dotDmg = 0;
-                if (s.type === 'bleeding') dotDmg = Math.floor(m.hpMax * 0.05);
-                if (s.type === 'burn') dotDmg = Math.floor(m.hpMax * 0.05);
-                if (s.type === 'poison') dotDmg = Math.floor(m.hpMax * 0.03);
-                if (s.type === 'curse') dotDmg = Math.floor(m.hpMax * 0.07);
+                if (s.type === 'bleeding') dotDmg = Math.floor(m.hpMax * 0.04);
+                if (s.type === 'burn') dotDmg = Math.floor(m.hpMax * 0.04);
+                if (s.type === 'poison') dotDmg = Math.floor(m.hpMax * 0.02);
+                if (s.type === 'curse') dotDmg = Math.floor(m.hpMax * 0.05);
 
                 if (dotDmg > 0) {
                     // [NEW] 레벨 차에 따른 데미지 감소 (몬스터 레벨이 더 높을 때)
@@ -1874,7 +1874,7 @@ class Game {
 
         const m = b.monster;
         const xp = m.xp || 0;
-        const g = Math.floor((m.gold || 0) * 1.3); // 몬스터 사냥 골드 30% 상향 (기존 20%에서 추가 상향)
+        const g = Math.floor((m.gold || 0) * 1.4); // 몬스터 사냥 골드 40% 상향
         p.xp += xp; p.gold += g;
 
         this.log(`${mN} 처치!`, 'victory');
@@ -1930,7 +1930,7 @@ class Game {
         // 몬스터 전리품 획득 로직
         if (m.loots && m.loots.length > 0) {
             m.loots.forEach(lootName => {
-                if (Math.random() < 0.4) { // 40% 확률로 고유 전리품 획득
+                if (Math.random() < 0.5) { // 50% 확률로 고유 전리품 획득
                     if (p.inventory.length < p.invMax) {
                         const existing = p.inventory.find(it => it.name === lootName && it.category === 'MATERIAL');
                         if (existing) {
@@ -1960,9 +1960,9 @@ class Game {
         const b = battle;
         const tier = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).tier;
 
-        let dropChance = 0.05; // 일반 몬스터 5%
-        if (b.type === 'mid' || b.type === 'mid_sequential') dropChance = 0.25; // 중간 보스 25%
-        else if (b.isBoss || b.type === 'boss') dropChance = 0.6; // 최종 보스 60%
+        let dropChance = 0.08; // 일반 몬스터 8%
+        if (b.type === 'mid' || b.type === 'mid_sequential') dropChance = 0.35; // 중간 보스 35%
+        else if (b.isBoss || b.type === 'boss') dropChance = 0.7; // 최종 보스 70%
 
         if (Math.random() < dropChance) {
             // 현재 던전 티어에 맞는 포션 풀 구성
@@ -1987,7 +1987,7 @@ class Game {
      * 레벨 업을 처리합니다. 최대 체력/마력이 상승하고 즉시 회복됩니다.
      */
     levelUp() {
-        const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.15);
+        const p = this.gameState.player; p.level++; p.xp -= p.xpNext; p.xpNext = Math.floor(p.xpNext * 1.12);
         this.recalculateMaxStats();
         p.hp = p.hpMax; p.mp = p.mpMax; this.updateStats();
         this.log(`LEVEL UP! ${p.level} 레벨 달성!`, 'system');
@@ -1997,7 +1997,7 @@ class Game {
      * 사망 시 처리: 골드 유실 및 HP/MP 전계 회복 후 마을 귀환
      */
     death() {
-        const p = this.gameState.player; const lg = Math.floor(p.gold * 0.2);
+        const p = this.gameState.player; const lg = Math.floor(p.gold * 0.15);
         p.gold -= lg; p.hp = p.hpMax; p.mp = p.mpMax;
 
         this.log('--- 치명적 패배 ---', 'death-notice');
@@ -2042,7 +2042,7 @@ class Game {
         }
     }
     tryEscape() {
-        if (this.currentBattle.monster.isTranscendenceBoss || Math.random() < 0.5) { //초월 몬스터는 100% 도망 가능
+        if (this.currentBattle.monster.isTranscendenceBoss || Math.random() < 0.6) { //초월 몬스터는 100% 도망 가능, 일반 60%
             this.log('탈출 성공!', 'system');
             document.body.classList.remove('in-dungeon');
             document.getElementById('monster-status').classList.add('hidden');
@@ -2113,13 +2113,13 @@ class Game {
 
             if (plus < 4) { successRate = 100; }
             else if (plus < 7) {
-                successRate = plus === 4 ? 75 : (plus === 5 ? 55 : 40);
-                downRate = plus === 4 ? 5 : (plus === 5 ? 15 : 25);
+                successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
+                downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
                 failRate = 100 - successRate - downRate;
             } else {
-                successRate = plus === 7 ? 30 : (plus === 8 ? 20 : 12);
-                downRate = plus === 7 ? 25 : (plus === 8 ? 30 : 35);
-                destroyRate = plus === 7 ? 15 : (plus === 8 ? 20 : 25);
+                successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
+                downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
+                destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
                 failRate = 100 - successRate - destroyRate - downRate;
             }
 
@@ -2338,16 +2338,16 @@ class Game {
             result = 'success';
         } else if (plus < 7) {
             // +5 ~ +7 구간: 실패 및 하락 확률 존재
-            const successRate = plus === 4 ? 75 : (plus === 5 ? 55 : 40);
-            const downRate = plus === 4 ? 5 : (plus === 5 ? 15 : 25);
+            const successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
+            const downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
             if (r < successRate) result = 'success';
             else if (r < successRate + downRate) result = 'down';
             else result = 'fail';
         } else {
             // +8 ~ +10 구간: 파괴 확률 발생
-            const successRate = plus === 7 ? 30 : (plus === 8 ? 20 : 12);
-            const downRate = plus === 7 ? 25 : (plus === 8 ? 30 : 35);
-            const destroyRate = plus === 7 ? 15 : (plus === 8 ? 20 : 25);
+            const successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
+            const downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
+            const destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
             if (r < successRate) result = 'success';
             else if (r < successRate + destroyRate) result = 'destroy';
             else if (r < successRate + destroyRate + downRate) result = 'down';
