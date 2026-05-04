@@ -474,7 +474,7 @@ class Game {
         const getEqStat = (it, stat) => {
             if (!it || !it[stat]) return 0;
             const plus = it.plus || 0;
-            return Math.floor(it[stat] * Math.pow(1.15, plus));
+            return Math.floor(it[stat] * Math.pow(1.12, plus));
         };
 
         let baseAtk = 10 + (p.level - 1) * 3 + getEqStat(p.equipment.weapon, 'atk') + getEqStat(p.equipment.armor, 'atk');
@@ -488,24 +488,24 @@ class Game {
 
         // 직업별 기본 보정 및 패시브
         if (p.job === '전사') {
-            p.def = Math.floor(p.def * 1.5);
+            p.def = Math.floor(p.def * 1.35);
             p.eva = Math.max(0, p.eva - 5);
 
             // 투쟁심 (Lv 60) - 공 20% + 강화당 5%, 치명타 15% + 강화당 2%
             if (p.level >= 60 && (p.hp / p.hpMax) <= 0.5) {
                 const rLv = p.skillLevels['ws6'] || 0;
-                p.atk = Math.floor(p.atk * (1.2 + rLv * 0.05));
+                p.atk = Math.floor(p.atk * (1.2 + rLv * 0.04));
                 p.cri += (15 + rLv * 2);
             }
         } else if (p.job === '마법사') {
             p.mag = p.atk; // 공격력 -> 마력 치환
             p.atk = 0;
-            p.def = Math.floor(p.def * 0.7);
+            p.def = Math.floor(p.def * 0.75);
 
             // 집중 (Lv 60) - 마력 15% + 강화당 5%, 치명타 15% + 강화당 2%
             if (p.level >= 60 && (p.mp / p.mpMax) >= 0.7) {
                 const rLv = p.skillLevels['ms6'] || 0;
-                p.mag = Math.floor(p.mag * (1.15 + rLv * 0.05));
+                p.mag = Math.floor(p.mag * (1.15 + rLv * 0.04));
                 p.cri += (15 + rLv * 2);
             }
         }
@@ -621,17 +621,17 @@ class Game {
         let baseMp = 60 + (p.level - 1) * 12;
 
         // 직업 보너스
-        if (p.job === '전사') baseHp = Math.floor(baseHp * 1.5);
-        if (p.job === '마법사') baseMp = Math.floor(baseMp * 1.5);
+        if (p.job === '전사') baseHp = Math.floor(baseHp * 1.35);
+        if (p.job === '마법사') baseMp = Math.floor(baseMp * 1.4);
 
         // 스킬 보너스
         if (p.job === '전사' && p.level >= 20) {
             const rLv = p.skillLevels['ws2'] || 0;
-            baseHp = Math.floor(baseHp * (1.2 + rLv * 0.05));
+            baseHp = Math.floor(baseHp * (1.2 + rLv * 0.04));
         }
         if (p.job === '마법사' && p.level >= 20) {
             const rLv = p.skillLevels['ms2'] || 0;
-            baseMp = Math.floor(baseMp * (1.2 + rLv * 0.05));
+            baseMp = Math.floor(baseMp * (1.2 + rLv * 0.04));
         }
 
         p.hpMax = baseHp;
@@ -893,10 +893,10 @@ class Game {
         const p = this.gameState.player;
         p.job = job;
         if (job === '전사') {
-            p.hpMax = Math.floor(p.hpMax * 1.5);
+            p.hpMax = Math.floor(p.hpMax * 1.35);
             p.hp = p.hpMax;
         } else if (job === '마법사') {
-            p.mpMax = Math.floor(p.mpMax * 1.5);
+            p.mpMax = Math.floor(p.mpMax * 1.4);
             p.mp = p.mpMax;
         }
 
@@ -1632,7 +1632,7 @@ class Game {
                 // [NEW] 스킬 강화 보너스 적용 (강화 레벨당 대미지 15% 복리 증가)
                 if (skill) {
                     const rLv = p.skillLevels[skill.id] || 0;
-                    d = Math.floor(d * Math.pow(1.15, rLv));
+                    d = Math.floor(d * Math.pow(1.10, rLv));
                 }
 
                 let criChance = p.cri;
@@ -2125,8 +2125,8 @@ class Game {
 
             const getStatPreview = (statKey, label) => {
                 if (!it[statKey]) return '';
-                const cur = Math.floor(it[statKey] * Math.pow(1.15, plus));
-                const next = Math.floor(it[statKey] * Math.pow(1.15, plus + 1));
+                const cur = Math.floor(it[statKey] * Math.pow(1.12, plus));
+                const next = Math.floor(it[statKey] * Math.pow(1.12, plus + 1));
                 return `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span></div>`;
             };
 
