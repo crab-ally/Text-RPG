@@ -516,8 +516,16 @@ class Game {
         if (this.currentBattle) {
             if (this.currentBattle.activeBuffs) {
                 this.currentBattle.activeBuffs.forEach(b => {
-                    if (b.type === 'berserk') { p.atk = Math.floor(p.atk * 1.5); p.eva = 0; }
-                    if (b.type === 'phaseShift') { p.cri += 50; p.eva = 100; }
+                    if (b.type === 'berserk') { 
+                        const rLv = this.gameState.player.skillLevels['ws8'] || 0;
+                        p.atk = Math.floor(p.atk * (1.5 + rLv * 0.1)); 
+                        p.eva = 0; 
+                    }
+                    if (b.type === 'phaseShift') { 
+                        const rLv = this.gameState.player.skillLevels['ms8'] || 0;
+                        p.cri += (50 + rLv * 10); 
+                        p.eva = 100; 
+                    }
                     if (b.type === 'ironWall') { p.def = Math.floor(p.def * 1.5); }
                 });
             }
@@ -1562,12 +1570,30 @@ class Game {
         if (s.type === 'active') {
             if (s.mult) {
                 const currentMult = s.mult * Math.pow(1.10, level);
-                const multText = ` <span style="color:var(--accent-cyan)">[계수: ${currentMult.toFixed(2)}x]</span>`;
-                return desc + multText;
+                desc += ` <span style="color:var(--accent-cyan)">[계수: ${currentMult.toFixed(2)}x]</span>`;
+            }
+            // 액티브 중 % 수치가 있는 스킬들 (철벽 자세, 심판의 반격, 광전사의 혼, 마나 실드, 위상 변환)
+            desc = desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가|효율))/g, (match, p1) => {
+                const val = parseInt(p1);
+                let newVal = val;
+                if (s.id === 'ws4') newVal = val + (level * 5); // 피해 감소, 반격 확률 +5%p
+                else if (s.id === 'ws5') newVal = val + (level * 10); // 흡혈량 +10%p (문구에는 없지만 맥락상)
+                else if (s.id === 'ws8') newVal = val + (level * 10); // 공격력 +10%p
+                else if (s.id === 'ms4') newVal = val - (level * 10); // 흡수 효율 -10%p (낮을수록 좋음)
+                else if (s.id === 'ms8') newVal = val + (level * 10); // 치명타 확률 +10%p
+                return `<span style="color:var(--accent-cyan)">${newVal}%</span>`;
+            });
+            // 특수: 마나 실드 유지 비용
+            if (s.id === 'ms4') {
+                desc = desc.replace(/MP (\d+)/, (match, p1) => {
+                    const val = parseInt(p1);
+                    const newVal = Math.max(1, val - (level * 2));
+                    return `MP <span style="color:var(--accent-cyan)">${newVal}</span>`;
+                });
             }
             return desc;
         } else {
-            // 패시브: % 수치를 찾아서 레벨당 4%p씩 증가시킴 (단, 조건부 %는 제외)
+            // 패시브: % 수치를 찾아서 레벨당 4%p씩 증가시킴
             return desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가))/g, (match, p1) => {
                 const val = parseInt(p1);
                 const newVal = val + (level * 4);
@@ -1696,11 +1722,17 @@ class Game {
                 this.log(`${m.name}의 공격을 회피했습니다!`, 'system');
             } else {
                 let md = Math.max(1, m.atk - p.def);
-                if (b.activeBuffs.some(buff => buff.type === 'ironWall')) md = Math.floor(md * 0.5);
+                if (b.activeBuffs.some(buff => buff.type === 'ironWall')) {
+                    const rLv = p.skillLevels['ws4'] || 0;
+                    const reduction = 0.5 + (rLv * 0.05); // 50% -> 55% -> 60% -> 65%
+                    md = Math.floor(md * (1 - reduction));
+                }
                 if (b.activeBuffs.some(buff => buff.type === 'berserk')) md = Math.floor(md * 1.5);
 
                 if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
-                    let mpDmg = Math.floor(md * 1.5);
+                    const rLv = p.skillLevels['ms4'] || 0;
+                    const ratio = 1.5 - (rLv * 0.1); // 1.5 -> 1.4 -> 1.3 -> 1.2
+                    let mpDmg = Math.floor(md * ratio);
                     if (p.mp >= mpDmg) {
                         p.mp -= mpDmg;
                         md = 0;
@@ -1726,7 +1758,10 @@ class Game {
 
                     let counterChance = 0;
                     let isRetribution = false;
-                    if (b.activeBuffs.some(buff => buff.type === 'ironWall')) counterChance += 0.3;
+                    if (b.activeBuffs.some(buff => buff.type === 'ironWall')) {
+                        const rLv = p.skillLevels['ws4'] || 0;
+                        counterChance += (0.3 + rLv * 0.05); // 30% -> 35% -> 40% -> 45%
+                    }
                     if (b.activeBuffs.some(buff => buff.type === 'retribution')) { counterChance = 1.0; isRetribution = true; }
 
                     if (Math.random() < counterChance && m.hp > 0) {
@@ -1734,7 +1769,9 @@ class Game {
                         m.hp -= cdmg;
                         this.log(`반격! ${m.name}에게 ${cdmg} 피해.`, 'system');
                         if (isRetribution) {
-                            let heal = Math.floor(cdmg * 0.3);
+                            const rLv = p.skillLevels['ws5'] || 0;
+                            const healRatio = 0.3 + (rLv * 0.1); // 30% -> 40% -> 50% -> 60%
+                            let heal = Math.floor(cdmg * healRatio);
                             p.hp = Math.min(p.hpMax, p.hp + heal);
                             this.log(`심판의 일격으로 HP ${heal} 회복.`, 'gain');
                         }
@@ -1863,7 +1900,9 @@ class Game {
         }
 
         if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
-            if (p.mp >= 15) { p.mp -= 15; }
+            const rLv = p.skillLevels['ms4'] || 0;
+            const cost = Math.max(1, 15 - (rLv * 2)); // 15 -> 13 -> 11 -> 9
+            if (p.mp >= cost) { p.mp -= cost; }
             else { b.activeBuffs = b.activeBuffs.filter(buff => buff.type !== 'manaShield'); this.log(`유지 비용 부족으로 마나 실드가 해제되었습니다.`, 'system'); }
         }
 
