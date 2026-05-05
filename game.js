@@ -1469,7 +1469,7 @@ class Game {
         const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
         const minLv = parseInt((town.levelRange || '').match(/\d+/)?.[0] || '1', 10);
         const maxLv = parseInt((town.levelRange || '').match(/~\s*(\d+)/)?.[1] || '20', 10);
-        
+
         m.level = m.isMidBoss ? dg.midBossLv : (m.isBoss ? dg.bossLv : Math.floor(minLv + (step / (dg.steps || 1)) * (maxLv - minLv)));
 
         let displayName = m.name;
@@ -1791,7 +1791,7 @@ class Game {
                         const reduction = Math.min(0.9, lvDiff * 0.02);
                         dotDmg = Math.floor(dotDmg * (1 - reduction));
                     }
-                    
+
                     p.hp -= dotDmg;
                     this.log(`[${Game.STATUS_EFFECT_DATA[s.type].name}] 플레이어가 ${dotDmg} 피해를 입었습니다.`, 'lose');
                 }
@@ -2489,8 +2489,8 @@ class Game {
             goldRewardMult = 2.5;
         }
 
-        // 보상 결정
-        const isGold = Math.random() < 0.5;
+        // 보상 결정 (수집 의뢰는 항상 골드 보상)
+        const isGold = type === 'collect' || Math.random() < 0.5;
         const goldAmount = () => Math.max(1, Math.floor((m.gold || 0) * targetCount * goldRewardMult));
         let reward;
 
