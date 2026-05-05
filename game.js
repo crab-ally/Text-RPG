@@ -493,22 +493,22 @@ class Game {
             p.def = Math.floor(p.def * 1.35);
             p.eva = Math.max(0, p.eva - 5);
 
-            // 투쟁심 (Lv 60) - 공 20% + 강화당 5%, 치명타 15% + 강화당 2%
+            // 투쟁심 (Lv 60) - 공 20% + 강화당 4%, 치명타 15% + 강화당 4%
             if (p.level >= 60 && (p.hp / p.hpMax) <= 0.5) {
                 const rLv = p.skillLevels['ws6'] || 0;
                 p.atk = Math.floor(p.atk * (1.2 + rLv * 0.04));
-                p.cri += (15 + rLv * 2);
+                p.cri += (15 + rLv * 4);
             }
         } else if (p.job === '마법사') {
             p.mag = p.atk; // 공격력 -> 마력 치환
             p.atk = 0;
             p.def = Math.floor(p.def * 0.75);
 
-            // 집중 (Lv 60) - 마력 15% + 강화당 5%, 치명타 15% + 강화당 2%
+            // 집중 (Lv 60) - 마력 15% + 강화당 4%, 치명타 15% + 강화당 4%
             if (p.level >= 60 && (p.mp / p.mpMax) >= 0.7) {
                 const rLv = p.skillLevels['ms6'] || 0;
                 p.mag = Math.floor(p.mag * (1.15 + rLv * 0.04));
-                p.cri += (15 + rLv * 2);
+                p.cri += (15 + rLv * 4);
             }
         }
 
@@ -838,7 +838,10 @@ class Game {
                             <span class="shop-item-name">${s.name}</span>
                             <span style="font-size:0.7rem; color:var(--gold-color); font-weight:700;">+${currentLv}</span>
                         </div>
-                        <span class="shop-item-detail">${s.desc}</span>
+                        <span class="shop-item-detail">${this.getSkillDesc(s, currentLv)}</span>
+                        <div style="font-size:0.75rem; color:var(--accent-cyan); margin-top:2px;">
+                            강화 효과: ${s.type === 'active' ? '대미지 +10% (복리)' : '효과 +4% (단리)'}
+                        </div>
                         <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
                             ${s.costVal > 0 ? `${s.costType.toUpperCase()} ${s.costVal} 소모` : '패시브 스킬'} | 요구 Lv.${s.reqLv}
                         </div>
@@ -1533,7 +1536,7 @@ class Game {
                         <span class="skill-name">${s.name}</span>
                         <span class="skill-cost cost-${s.costType}">${s.costType.toUpperCase()} ${s.costVal}</span>
                     </div>
-                    <div class="skill-desc">${s.desc}</div>
+                    <div class="skill-desc">${this.getSkillDesc(s, b.skillCooldowns[s.id] || 0, true)}</div>
                     ${cd > 0 ? `<div class="skill-cooldown">쿨타임: ${cd}턴</div>` : ''}
                 </button>
             `;
@@ -1546,6 +1549,31 @@ class Game {
 
     closeSkillPanel() {
         this.renderBattleActions();
+    }
+
+    /**
+     * 스킬 레벨에 따라 동적으로 강화된 수치를 포함한 설명을 반환합니다.
+     */
+    getSkillDesc(s, rLv, isBattle = false) {
+        // 전투 중일 때는 skillLevels에서 가져와야 함 (매개변수 rLv가 쿨타임으로 전달되는 경우가 있으므로 주의)
+        const level = isBattle ? (this.gameState.player.skillLevels[s.id] || 0) : rLv;
+        let desc = s.desc;
+
+        if (s.type === 'active') {
+            if (s.mult) {
+                const currentMult = s.mult * Math.pow(1.10, level);
+                const multText = ` <span style="color:var(--accent-cyan)">[계수: ${currentMult.toFixed(2)}x]</span>`;
+                return desc + multText;
+            }
+            return desc;
+        } else {
+            // 패시브: % 수치를 찾아서 레벨당 4%p씩 증가시킴 (단, 조건부 %는 제외)
+            return desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가))/g, (match, p1) => {
+                const val = parseInt(p1);
+                const newVal = val + (level * 4);
+                return `<span style="color:var(--accent-cyan)">${newVal}%</span>`;
+            });
+        }
     }
 
     useSkill(skillId) {
@@ -1561,7 +1589,8 @@ class Game {
             p.hp -= skill.costVal;
         } else if (skill.costType === 'mp') {
             let cost = skill.costVal;
-            if (p.job === '마법사' && p.level >= 90 && Math.random() < 0.2) {
+            const rLv = p.skillLevels['ms9'] || 0;
+            if (p.job === '마법사' && p.level >= 90 && Math.random() < (0.2 + rLv * 0.04)) {
                 this.log('현자의 지혜 발동! MP를 소모하지 않습니다.', 'gain');
                 cost = 0;
             }
@@ -1828,7 +1857,8 @@ class Game {
 
         if (p.job === '마법사' && !mpRecoveryBlocked) {
             if (p.level >= 20) {
-                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * 0.05));
+                const rLv = p.skillLevels['ms2'] || 0;
+                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * (0.05 + rLv * 0.04)));
             }
         }
 
@@ -1838,7 +1868,8 @@ class Game {
         }
 
         if (p.job === '전사' && p.level >= 90 && (p.hp / p.hpMax) <= 0.3) {
-            let heal = Math.floor(p.hpMax * 0.1);
+            const rLv = p.skillLevels['ws9'] || 0;
+            let heal = Math.floor(p.hpMax * (0.1 + rLv * 0.04));
             p.hp = Math.min(p.hpMax, p.hp + heal);
             this.log(`[강철 심장] HP ${heal} 회복.`, 'gain');
         }
