@@ -105,6 +105,7 @@ class Game {
                 slot.innerHTML = `
                     <div class="slot-number">SLOT ${i}</div>
                     <div class="slot-lv">LV ${summary.level}</div>
+                    <div class="slot-job">${summary.job}</div>
                     <div class="slot-loc">${summary.location}</div>
                 `;
                 slot.onclick = () => this.startGame(true, i);
@@ -137,7 +138,7 @@ class Game {
                 <div class="slot-wrapper">
                     <div class="slot-card ${!summary ? 'empty' : ''}" onclick="game.saveGame(${i})">
                         <div class="slot-number">SLOT ${i}</div>
-                        ${summary ? `<div class="slot-lv">LV ${summary.level}</div><div class="slot-loc">${summary.location}</div>` : '<div class="slot-empty-text">덮어쓰기</div>'}
+                        ${summary ? `<div class="slot-lv">LV ${summary.level}</div><div class="slot-job">${summary.job}</div><div class="slot-loc">${summary.location}</div>` : '<div class="slot-empty-text">덮어쓰기</div>'}
                     </div>
                     ${summary ? `<button class="slot-delete-btn" onclick="event.stopPropagation(); game.deleteGame(${i}, 'save')">삭제</button>` : ''}
                 </div>
@@ -204,6 +205,7 @@ class Game {
             const town = GAME_DATA.TOWNS.find(t => t.id === data.world.currentLocation);
             return {
                 level: data.player.level,
+                job: data.player.job || '초보자',
                 location: town ? town.name : '알 수 없음'
             };
         } catch (e) { return null; }
