@@ -105,6 +105,7 @@ class Game {
                 slot.innerHTML = `
                     <div class="slot-number">SLOT ${i}</div>
                     <div class="slot-lv">LV ${summary.level}</div>
+                    <div class="slot-job">${summary.job}</div>
                     <div class="slot-loc">${summary.location}</div>
                 `;
                 slot.onclick = () => this.startGame(true, i);
@@ -137,7 +138,7 @@ class Game {
                 <div class="slot-wrapper">
                     <div class="slot-card ${!summary ? 'empty' : ''}" onclick="game.saveGame(${i})">
                         <div class="slot-number">SLOT ${i}</div>
-                        ${summary ? `<div class="slot-lv">LV ${summary.level}</div><div class="slot-loc">${summary.location}</div>` : '<div class="slot-empty-text">덮어쓰기</div>'}
+                        ${summary ? `<div class="slot-lv">LV ${summary.level}</div><div class="slot-job">${summary.job}</div><div class="slot-loc">${summary.location}</div>` : '<div class="slot-empty-text">덮어쓰기</div>'}
                     </div>
                     ${summary ? `<button class="slot-delete-btn" onclick="event.stopPropagation(); game.deleteGame(${i}, 'save')">삭제</button>` : ''}
                 </div>
@@ -204,6 +205,7 @@ class Game {
             const town = GAME_DATA.TOWNS.find(t => t.id === data.world.currentLocation);
             return {
                 level: data.player.level,
+                job: data.player.job || '초보자',
                 location: town ? town.name : '알 수 없음'
             };
         } catch (e) { return null; }
@@ -491,22 +493,22 @@ class Game {
             p.def = Math.floor(p.def * 1.35);
             p.eva = Math.max(0, p.eva - 5);
 
-            // 투쟁심 (Lv 60) - 공 20% + 강화당 5%, 치명타 15% + 강화당 2%
+            // 투쟁심 (Lv 60) - 공 20% + 강화당 4%, 치명타 15% + 강화당 4%
             if (p.level >= 60 && (p.hp / p.hpMax) <= 0.5) {
                 const rLv = p.skillLevels['ws6'] || 0;
                 p.atk = Math.floor(p.atk * (1.2 + rLv * 0.04));
-                p.cri += (15 + rLv * 2);
+                p.cri += (15 + rLv * 4);
             }
         } else if (p.job === '마법사') {
             p.mag = p.atk; // 공격력 -> 마력 치환
             p.atk = 0;
             p.def = Math.floor(p.def * 0.75);
 
-            // 집중 (Lv 60) - 마력 15% + 강화당 5%, 치명타 15% + 강화당 2%
+            // 집중 (Lv 60) - 마력 15% + 강화당 4%, 치명타 15% + 강화당 4%
             if (p.level >= 60 && (p.mp / p.mpMax) >= 0.7) {
                 const rLv = p.skillLevels['ms6'] || 0;
                 p.mag = Math.floor(p.mag * (1.15 + rLv * 0.04));
-                p.cri += (15 + rLv * 2);
+                p.cri += (15 + rLv * 4);
             }
         }
 
@@ -514,8 +516,16 @@ class Game {
         if (this.currentBattle) {
             if (this.currentBattle.activeBuffs) {
                 this.currentBattle.activeBuffs.forEach(b => {
-                    if (b.type === 'berserk') { p.atk = Math.floor(p.atk * 1.5); p.eva = 0; }
-                    if (b.type === 'phaseShift') { p.cri += 50; p.eva = 100; }
+                    if (b.type === 'berserk') { 
+                        const rLv = this.gameState.player.skillLevels['ws8'] || 0;
+                        p.atk = Math.floor(p.atk * (1.5 + rLv * 0.1)); 
+                        p.eva = 0; 
+                    }
+                    if (b.type === 'phaseShift') { 
+                        const rLv = this.gameState.player.skillLevels['ms8'] || 0;
+                        p.cri += (50 + rLv * 10); 
+                        p.eva = 100; 
+                    }
                     if (b.type === 'ironWall') { p.def = Math.floor(p.def * 1.5); }
                 });
             }
@@ -836,7 +846,10 @@ class Game {
                             <span class="shop-item-name">${s.name}</span>
                             <span style="font-size:0.7rem; color:var(--gold-color); font-weight:700;">+${currentLv}</span>
                         </div>
-                        <span class="shop-item-detail">${s.desc}</span>
+                        <span class="shop-item-detail">${this.getSkillDesc(s, currentLv)}</span>
+                        <div style="font-size:0.75rem; color:var(--accent-cyan); margin-top:2px;">
+                            강화 효과: ${s.type === 'active' ? '대미지 +10% (복리)' : '효과 +4% (단리)'}
+                        </div>
                         <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
                             ${s.costVal > 0 ? `${s.costType.toUpperCase()} ${s.costVal} 소모` : '패시브 스킬'} | 요구 Lv.${s.reqLv}
                         </div>
@@ -1467,7 +1480,7 @@ class Game {
         const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
         const minLv = parseInt((town.levelRange || '').match(/\d+/)?.[0] || '1', 10);
         const maxLv = parseInt((town.levelRange || '').match(/~\s*(\d+)/)?.[1] || '20', 10);
-        
+
         m.level = m.isMidBoss ? dg.midBossLv : (m.isBoss ? dg.bossLv : Math.floor(minLv + (step / (dg.steps || 1)) * (maxLv - minLv)));
 
         let displayName = m.name;
@@ -1531,7 +1544,7 @@ class Game {
                         <span class="skill-name">${s.name}</span>
                         <span class="skill-cost cost-${s.costType}">${s.costType.toUpperCase()} ${s.costVal}</span>
                     </div>
-                    <div class="skill-desc">${s.desc}</div>
+                    <div class="skill-desc">${this.getSkillDesc(s, b.skillCooldowns[s.id] || 0, true)}</div>
                     ${cd > 0 ? `<div class="skill-cooldown">쿨타임: ${cd}턴</div>` : ''}
                 </button>
             `;
@@ -1544,6 +1557,49 @@ class Game {
 
     closeSkillPanel() {
         this.renderBattleActions();
+    }
+
+    /**
+     * 스킬 레벨에 따라 동적으로 강화된 수치를 포함한 설명을 반환합니다.
+     */
+    getSkillDesc(s, rLv, isBattle = false) {
+        // 전투 중일 때는 skillLevels에서 가져와야 함 (매개변수 rLv가 쿨타임으로 전달되는 경우가 있으므로 주의)
+        const level = isBattle ? (this.gameState.player.skillLevels[s.id] || 0) : rLv;
+        let desc = s.desc;
+
+        if (s.type === 'active') {
+            if (s.mult) {
+                const currentMult = s.mult * Math.pow(1.10, level);
+                desc += ` <span style="color:var(--accent-cyan)">[계수: ${currentMult.toFixed(2)}x]</span>`;
+            }
+            // 액티브 중 % 수치가 있는 스킬들 (철벽 자세, 심판의 반격, 광전사의 혼, 마나 실드, 위상 변환)
+            desc = desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가|효율))/g, (match, p1) => {
+                const val = parseInt(p1);
+                let newVal = val;
+                if (s.id === 'ws4') newVal = val + (level * 5); // 피해 감소, 반격 확률 +5%p
+                else if (s.id === 'ws5') newVal = val + (level * 10); // 흡혈량 +10%p (문구에는 없지만 맥락상)
+                else if (s.id === 'ws8') newVal = val + (level * 10); // 공격력 +10%p
+                else if (s.id === 'ms4') newVal = val - (level * 10); // 흡수 효율 -10%p (낮을수록 좋음)
+                else if (s.id === 'ms8') newVal = val + (level * 10); // 치명타 확률 +10%p
+                return `<span style="color:var(--accent-cyan)">${newVal}%</span>`;
+            });
+            // 특수: 마나 실드 유지 비용
+            if (s.id === 'ms4') {
+                desc = desc.replace(/MP (\d+)/, (match, p1) => {
+                    const val = parseInt(p1);
+                    const newVal = Math.max(1, val - (level * 2));
+                    return `MP <span style="color:var(--accent-cyan)">${newVal}</span>`;
+                });
+            }
+            return desc;
+        } else {
+            // 패시브: % 수치를 찾아서 레벨당 4%p씩 증가시킴
+            return desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가))/g, (match, p1) => {
+                const val = parseInt(p1);
+                const newVal = val + (level * 4);
+                return `<span style="color:var(--accent-cyan)">${newVal}%</span>`;
+            });
+        }
     }
 
     useSkill(skillId) {
@@ -1559,7 +1615,8 @@ class Game {
             p.hp -= skill.costVal;
         } else if (skill.costType === 'mp') {
             let cost = skill.costVal;
-            if (p.job === '마법사' && p.level >= 90 && Math.random() < 0.2) {
+            const rLv = p.skillLevels['ms9'] || 0;
+            if (p.job === '마법사' && p.level >= 90 && Math.random() < (0.2 + rLv * 0.04)) {
                 this.log('현자의 지혜 발동! MP를 소모하지 않습니다.', 'gain');
                 cost = 0;
             }
@@ -1665,11 +1722,17 @@ class Game {
                 this.log(`${m.name}의 공격을 회피했습니다!`, 'system');
             } else {
                 let md = Math.max(1, m.atk - p.def);
-                if (b.activeBuffs.some(buff => buff.type === 'ironWall')) md = Math.floor(md * 0.5);
+                if (b.activeBuffs.some(buff => buff.type === 'ironWall')) {
+                    const rLv = p.skillLevels['ws4'] || 0;
+                    const reduction = 0.5 + (rLv * 0.05); // 50% -> 55% -> 60% -> 65%
+                    md = Math.floor(md * (1 - reduction));
+                }
                 if (b.activeBuffs.some(buff => buff.type === 'berserk')) md = Math.floor(md * 1.5);
 
                 if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
-                    let mpDmg = Math.floor(md * 1.5);
+                    const rLv = p.skillLevels['ms4'] || 0;
+                    const ratio = 1.5 - (rLv * 0.1); // 1.5 -> 1.4 -> 1.3 -> 1.2
+                    let mpDmg = Math.floor(md * ratio);
                     if (p.mp >= mpDmg) {
                         p.mp -= mpDmg;
                         md = 0;
@@ -1695,7 +1758,10 @@ class Game {
 
                     let counterChance = 0;
                     let isRetribution = false;
-                    if (b.activeBuffs.some(buff => buff.type === 'ironWall')) counterChance += 0.3;
+                    if (b.activeBuffs.some(buff => buff.type === 'ironWall')) {
+                        const rLv = p.skillLevels['ws4'] || 0;
+                        counterChance += (0.3 + rLv * 0.05); // 30% -> 35% -> 40% -> 45%
+                    }
                     if (b.activeBuffs.some(buff => buff.type === 'retribution')) { counterChance = 1.0; isRetribution = true; }
 
                     if (Math.random() < counterChance && m.hp > 0) {
@@ -1703,7 +1769,9 @@ class Game {
                         m.hp -= cdmg;
                         this.log(`반격! ${m.name}에게 ${cdmg} 피해.`, 'system');
                         if (isRetribution) {
-                            let heal = Math.floor(cdmg * 0.3);
+                            const rLv = p.skillLevels['ws5'] || 0;
+                            const healRatio = 0.3 + (rLv * 0.1); // 30% -> 40% -> 50% -> 60%
+                            let heal = Math.floor(cdmg * healRatio);
                             p.hp = Math.min(p.hpMax, p.hp + heal);
                             this.log(`심판의 일격으로 HP ${heal} 회복.`, 'gain');
                         }
@@ -1789,7 +1857,7 @@ class Game {
                         const reduction = Math.min(0.9, lvDiff * 0.02);
                         dotDmg = Math.floor(dotDmg * (1 - reduction));
                     }
-                    
+
                     p.hp -= dotDmg;
                     this.log(`[${Game.STATUS_EFFECT_DATA[s.type].name}] 플레이어가 ${dotDmg} 피해를 입었습니다.`, 'lose');
                 }
@@ -1826,17 +1894,21 @@ class Game {
 
         if (p.job === '마법사' && !mpRecoveryBlocked) {
             if (p.level >= 20) {
-                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * 0.05));
+                const rLv = p.skillLevels['ms2'] || 0;
+                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * (0.05 + rLv * 0.04)));
             }
         }
 
         if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
-            if (p.mp >= 15) { p.mp -= 15; }
+            const rLv = p.skillLevels['ms4'] || 0;
+            const cost = Math.max(1, 15 - (rLv * 2)); // 15 -> 13 -> 11 -> 9
+            if (p.mp >= cost) { p.mp -= cost; }
             else { b.activeBuffs = b.activeBuffs.filter(buff => buff.type !== 'manaShield'); this.log(`유지 비용 부족으로 마나 실드가 해제되었습니다.`, 'system'); }
         }
 
         if (p.job === '전사' && p.level >= 90 && (p.hp / p.hpMax) <= 0.3) {
-            let heal = Math.floor(p.hpMax * 0.1);
+            const rLv = p.skillLevels['ws9'] || 0;
+            let heal = Math.floor(p.hpMax * (0.1 + rLv * 0.04));
             p.hp = Math.min(p.hpMax, p.hp + heal);
             this.log(`[강철 심장] HP ${heal} 회복.`, 'gain');
         }
@@ -2487,8 +2559,8 @@ class Game {
             goldRewardMult = 2.5;
         }
 
-        // 보상 결정
-        const isGold = Math.random() < 0.5;
+        // 보상 결정 (수집 의뢰는 항상 골드 보상)
+        const isGold = type === 'collect' || Math.random() < 0.5;
         const goldAmount = () => Math.max(1, Math.floor((m.gold || 0) * targetCount * goldRewardMult));
         let reward;
 
