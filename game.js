@@ -2071,8 +2071,8 @@ class Game {
             const next = GAME_DATA.TOWNS[GAME_DATA.TOWNS.indexOf(curr) + 1];
             if (next && !p.unlockedTowns.includes(next.id)) { p.unlockedTowns.push(next.id); this.log(`${next.name} 해금!`, 'system'); }
 
-            // 80레벨 이상 보스(Zone 4 이상) 처치 시 20% 확률로 레시피 드랍
-            if (curr.tier >= 4 && Math.random() < 0.2) {
+            // 80레벨 이상 던전의 보스(Zone 5 이상) 처치 시 20% 확률로 레시피 드랍
+            if (curr.tier >= 5 && Math.random() < 0.2) {
                 this.handleRecipeDrop();
             }
         }
