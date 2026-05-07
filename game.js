@@ -2282,7 +2282,7 @@ class Game {
                 if (!it[statKey]) return '';
                 const cur = Math.floor(it[statKey] * Math.pow(1.12, plus));
                 const next = Math.floor(it[statKey] * Math.pow(1.12, plus + 1));
-                return `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span></div>`;
+                return `${plus < 10 ? `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span></div>` : `<div>${label} ${cur}</div>`}`;
             };
 
             h += `
@@ -2295,9 +2295,11 @@ class Game {
                         ${getStatPreview('atk', '공격력')} ${getStatPreview('def', '방어력')}
                     </div>
                     <div style="font-size:0.7rem; display:flex; gap:10px;">
+                    ${plus < 10 ? `
                         <span style="color:var(--accent-cyan)">성공: ${successRate}%</span>
                         ${downRate > 0 ? `<span style="color:#ff884d">하락: ${downRate}%</span>` : ''}
                         ${destroyRate > 0 ? `<span style="color:#ff4d4d">파괴: ${destroyRate}%</span>` : ''}
+                    ` : ` `}
                     </div>
                     ${plus >= 10 ? `
                         <div style="width:100%; text-align:center; padding:10px; background:rgba(0,242,255,0.1); border-radius:4px; margin-top:5px; color:var(--accent-cyan); font-weight:700;">
