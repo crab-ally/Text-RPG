@@ -356,7 +356,7 @@ class Game {
 
         const gradeClass = this.getGradeClass(item.grade);
         const plusText = item.plus > 0 ? ` +${item.plus}` : '';
-        
+
         // 아이템 능력치 계산 (강화 수치 반영)
         const getStatValue = (stat) => {
             if (!item[stat]) return 0;
@@ -388,22 +388,18 @@ class Game {
             </div>
             <div class="tooltip-stats">
                 ${statsHtml}
-                <div class="tooltip-stat-row">
-                    <span class="tooltip-stat-label">티어</span>
-                    <span class="tooltip-stat-value">${item.tier || 1}</span>
-                </div>
             </div>
         `;
 
         tooltip.classList.remove('hidden');
-        
+
         // 마우스 커서 위치에 맞게 조정 (화면 밖으로 나가지 않게)
         const x = event.clientX + 15;
         const y = event.clientY + 15;
-        
+
         tooltip.style.left = x + 'px';
         tooltip.style.top = y + 'px';
-        
+
         // 화면 하단/우측 경계 체크
         const rect = tooltip.getBoundingClientRect();
         if (x + rect.width > window.innerWidth) {
@@ -603,15 +599,15 @@ class Game {
         if (this.currentBattle) {
             if (this.currentBattle.activeBuffs) {
                 this.currentBattle.activeBuffs.forEach(b => {
-                    if (b.type === 'berserk') { 
+                    if (b.type === 'berserk') {
                         const rLv = this.gameState.player.skillLevels['ws8'] || 0;
-                        p.atk = Math.floor(p.atk * (1.5 + rLv * 0.1)); 
-                        p.eva = 0; 
+                        p.atk = Math.floor(p.atk * (1.5 + rLv * 0.1));
+                        p.eva = 0;
                     }
-                    if (b.type === 'phaseShift') { 
+                    if (b.type === 'phaseShift') {
                         const rLv = this.gameState.player.skillLevels['ms8'] || 0;
-                        p.cri += (50 + rLv * 10); 
-                        p.eva = 100; 
+                        p.cri += (50 + rLv * 10);
+                        p.eva = 100;
                     }
                     if (b.type === 'ironWall') { p.def = Math.floor(p.def * 1.5); }
                 });
