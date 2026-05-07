@@ -302,12 +302,24 @@ class Game {
         const armor = p.equipment.armor;
 
         const setSlotItem = (elId, item) => {
-            const el = document.getElementById(elId).querySelector('.slot-item');
+            const slotEl = document.getElementById(elId);
+            const el = slotEl.querySelector('.slot-item');
             el.innerText = item ? `${item.name} ${item.plus > 0 ? '+' + item.plus : ''}` : '-';
             el.className = 'slot-item';
             if (item && item.grade) {
                 const gradeClass = this.getGradeClass(item.grade);
                 if (gradeClass) el.classList.add(gradeClass);
+            }
+
+            // [NEW] 툴팁 이벤트 추가
+            if (item) {
+                slotEl.onmouseenter = (e) => this.showEquipmentTooltip(item, e);
+                slotEl.onmousemove = (e) => this.showEquipmentTooltip(item, e);
+                slotEl.onmouseleave = () => this.hideEquipmentTooltip();
+            } else {
+                slotEl.onmouseenter = null;
+                slotEl.onmousemove = null;
+                slotEl.onmouseleave = null;
             }
         };
 
@@ -333,6 +345,81 @@ class Game {
         }
 
         this.renderDailyQuestHeader();
+    }
+
+    /**
+     * [NEW] 장비 정보 툴팁을 표시합니다.
+     */
+    showEquipmentTooltip(item, event) {
+        const tooltip = document.getElementById('equipment-tooltip');
+        if (!tooltip || !item) return;
+
+        const gradeClass = this.getGradeClass(item.grade);
+        const plusText = item.plus > 0 ? ` +${item.plus}` : '';
+        
+        // 아이템 능력치 계산 (강화 수치 반영)
+        const getStatValue = (stat) => {
+            if (!item[stat]) return 0;
+            return Math.floor(item[stat] * Math.pow(1.12, item.plus || 0));
+        };
+
+        let statsHtml = '';
+        if (item.atk) {
+            statsHtml += `
+                <div class="tooltip-stat-row">
+                    <span class="tooltip-stat-label">공격력</span>
+                    <span class="tooltip-stat-value">${getStatValue('atk')}</span>
+                </div>
+            `;
+        }
+        if (item.def) {
+            statsHtml += `
+                <div class="tooltip-stat-row">
+                    <span class="tooltip-stat-label">방어력</span>
+                    <span class="tooltip-stat-value">${getStatValue('def')}</span>
+                </div>
+            `;
+        }
+
+        tooltip.innerHTML = `
+            <div class="tooltip-header">
+                <span class="tooltip-name ${gradeClass}">${item.name}${plusText}</span>
+                <span class="tooltip-grade ${gradeClass}">${item.grade}</span>
+            </div>
+            <div class="tooltip-stats">
+                ${statsHtml}
+                <div class="tooltip-stat-row">
+                    <span class="tooltip-stat-label">티어</span>
+                    <span class="tooltip-stat-value">${item.tier || 1}</span>
+                </div>
+            </div>
+        `;
+
+        tooltip.classList.remove('hidden');
+        
+        // 마우스 커서 위치에 맞게 조정 (화면 밖으로 나가지 않게)
+        const x = event.clientX + 15;
+        const y = event.clientY + 15;
+        
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+        
+        // 화면 하단/우측 경계 체크
+        const rect = tooltip.getBoundingClientRect();
+        if (x + rect.width > window.innerWidth) {
+            tooltip.style.left = (event.clientX - rect.width - 15) + 'px';
+        }
+        if (y + rect.height > window.innerHeight) {
+            tooltip.style.top = (event.clientY - rect.height - 15) + 'px';
+        }
+    }
+
+    /**
+     * [NEW] 장비 정보 툴팁을 숨깁니다.
+     */
+    hideEquipmentTooltip() {
+        const tooltip = document.getElementById('equipment-tooltip');
+        if (tooltip) tooltip.classList.add('hidden');
     }
 
     /**
@@ -2216,7 +2303,14 @@ class Game {
                         ${downRate > 0 ? `<span style="color:#ff884d">하락: ${downRate}%</span>` : ''}
                         ${destroyRate > 0 ? `<span style="color:#ff4d4d">파괴: ${destroyRate}%</span>` : ''}
                     </div>
-                    <button style="width:100%; margin-top:5px;" onclick="game.reinforce('${type}')">강화 시도</button>
+                    ${plus >= 10 ? `
+                        <div style="width:100%; text-align:center; padding:10px; background:rgba(0,242,255,0.1); border-radius:4px; margin-top:5px; color:var(--accent-cyan); font-weight:700;">
+                            최대 강화 단계입니다.
+                        </div>
+                        <button style="width:100%; margin-top:5px; opacity:0.5; cursor:not-allowed;" disabled>강화 불가</button>
+                    ` : `
+                        <button style="width:100%; margin-top:5px;" onclick="game.reinforce('${type}')">강화 시도</button>
+                    `}
                 </div>
             `;
         };
@@ -2396,6 +2490,11 @@ class Game {
         if (!target) return;
 
         const plus = target.plus || 0;
+        if (plus >= 10) {
+            alert('이미 최대 강화 단계(+10)입니다.');
+            return;
+        }
+
         const cost = Math.floor(100 * (target.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
 
         // 골드 부족 체크
