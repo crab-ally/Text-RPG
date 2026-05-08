@@ -24,8 +24,8 @@ class Game {
                 unlockedRecipes: [],                        // 사용 완료된 레시피 (하얀색 표시)
                 discoveredRecipes: [],                      // 보유 중인 레시피 (노란색 표시)
                 materials: {},                              // 몬스터 전리품 인벤토리
-                activeStatusEffects: [],                    // [NEW] 플레이어 상시 상태이상 (전투 외에도 유지될 수 있음)
-                skillLevels: {}                             // [NEW] 스킬별 강화 수치 (id: level)
+                activeStatusEffects: [],                    // 플레이어 상시 상태이상 (전투 외에도 유지될 수 있음)
+                skillLevels: {}                             // 스킬별 강화 수치 (id: level)
             },
             world: {
                 currentLocation: 'town1', day: 1, inflation: 1.0, // 현재 장소, 날짜, 물가 상승률
@@ -184,7 +184,7 @@ class Game {
         if (saved) {
             try {
                 this.gameState = JSON.parse(saved);
-                // [NEW] 기존 세이브 데이터에 skillLevels가 없는 경우 초기화
+                // 기존 세이브 데이터에 skillLevels가 없는 경우 초기화
                 if (!this.gameState.player.skillLevels) {
                     this.gameState.player.skillLevels = {};
                 }
@@ -311,7 +311,7 @@ class Game {
                 if (gradeClass) el.classList.add(gradeClass);
             }
 
-            // [NEW] 툴팁 이벤트 추가
+            // 툴팁 이벤트 추가
             if (item) {
                 slotEl.onmouseenter = (e) => this.showEquipmentTooltip(item, e);
                 slotEl.onmousemove = (e) => this.showEquipmentTooltip(item, e);
@@ -348,7 +348,7 @@ class Game {
     }
 
     /**
-     * [NEW] 장비 정보 툴팁을 표시합니다.
+     * 장비 정보 툴팁을 표시합니다.
      */
     showEquipmentTooltip(item, event) {
         const tooltip = document.getElementById('equipment-tooltip');
@@ -411,7 +411,7 @@ class Game {
     }
 
     /**
-     * [NEW] 장비 정보 툴팁을 숨깁니다.
+     * 장비 정보 툴팁을 숨깁니다.
      */
     hideEquipmentTooltip() {
         const tooltip = document.getElementById('equipment-tooltip');
@@ -465,6 +465,34 @@ class Game {
             '순수': 'grade-mythic'
         };
         return mapping[grade] || '';
+    }
+
+    /**
+     * 강화 단계별 성공, 하락, 파괴 확률을 반환합니다.
+     */
+    getReinforcementRates(plus) {
+        let successRate = 0, downRate = 0, destroyRate = 0, failRate = 0;
+        if (plus < 4) {
+            successRate = 100;
+        } else if (plus < 7) {
+            successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
+            downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
+            failRate = 100 - successRate - downRate;
+        } else {
+            successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
+            downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
+            destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
+            failRate = 100 - successRate - destroyRate - downRate;
+        }
+        return { successRate, downRate, destroyRate, failRate };
+    }
+
+    /**
+     * 인벤토리 내 특정 재료의 보유 수량을 반환합니다.
+     */
+    getOwnedMaterialCount(name) {
+        const item = this.gameState.player.inventory.find(it => it.name === name && it.category === 'MATERIAL');
+        return item ? (item.count || 1) : 0;
     }
 
     /**
@@ -704,7 +732,7 @@ class Game {
     }
 
     /**
-     * [NEW] 플레이어의 최대 HP/MP를 직업, 레벨, 강화 수치에 따라 재계산합니다.
+     * 플레이어의 최대 HP/MP를 직업, 레벨, 강화 수치에 따라 재계산합니다.
      */
     recalculateMaxStats() {
         const p = this.gameState.player;
@@ -1046,8 +1074,7 @@ class Game {
                         const potionTier = Math.min(tier, 6);
                         return Number(i.tier) === potionTier && (i.hp != null || i.mp != null);
                     }
-                    // 전설(Tier 5) 등급 까지만 판매, 신화(Tier 6) 이상 제외
-                    // [MOD] 현재 마을 티어와 정확히 일치하는 아이템만 판매
+                    // 현재 마을 티어와 일치하는 아이템만 판매 (신화·초월 등급 제외)
                     return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
                 }).forEach(it => {
                     const pr = Math.floor(it.price * inf);
@@ -1212,10 +1239,6 @@ class Game {
         this.log(`${itData.name}을(를) 구매했습니다.`, 'gain'); this.updateUI(); this.openShop();
     }
 
-    //openBuilding(b) {
-    //    if (b === 'shop') this.purchasedInSession = new Set();
-    //    this.handleBuildingClick(b);
-    //}
 
 
     /**
@@ -1559,7 +1582,7 @@ class Game {
         const mStatus = document.getElementById('monster-status');
         mStatus.classList.remove('hidden');
 
-        // [NEW] 몬스터 레벨 계산 (일반 몬스터도 던전 진행도에 따라 레벨 부여)
+        // 몬스터 레벨 계산 (던전 진행도에 따라 레벨 부여)
         const town = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation);
         const minLv = parseInt((town.levelRange || '').match(/\d+/)?.[0] || '1', 10);
         const maxLv = parseInt((town.levelRange || '').match(/~\s*(\d+)/)?.[1] || '20', 10);
@@ -1769,7 +1792,7 @@ class Game {
 
                 d = Math.floor(d * playerDmgMult);
 
-                // [NEW] 스킬 강화 보너스 적용 (강화 레벨당 대미지 15% 복리 증가)
+                // 스킬 강화 보너스 적용 (강화 레벨당 데미지 10% 복리 증가)
                 if (skill) {
                     const rLv = p.skillLevels[skill.id] || 0;
                     d = Math.floor(d * Math.pow(1.10, rLv));
@@ -1934,7 +1957,7 @@ class Game {
                 if (s.type === 'curse') dotDmg = Math.floor(p.hpMax * 0.05);
 
                 if (dotDmg > 0) {
-                    // [NEW] 레벨 차에 따른 데미지 감소 (플레이어 레벨이 더 높을 때)
+                    // 레벨 차에 따른 도트 데미지 감소 (플레이어 레벨이 더 높을 때)
                     const lvDiff = p.level - (m.level || 1);
                     if (lvDiff > 0) {
                         const reduction = Math.min(0.9, lvDiff * 0.02);
@@ -1958,7 +1981,7 @@ class Game {
                 if (s.type === 'curse') dotDmg = Math.floor(m.hpMax * 0.05);
 
                 if (dotDmg > 0) {
-                    // [NEW] 레벨 차에 따른 데미지 감소 (몬스터 레벨이 더 높을 때)
+                    // 레벨 차에 따른 도트 데미지 감소 (몬스터 레벨이 더 높을 때)
                     const lvDiff = (m.level || 1) - p.level;
                     if (lvDiff > 0) {
                         const reduction = Math.min(0.9, lvDiff * 0.02);
@@ -2112,12 +2135,11 @@ class Game {
      */
     handlePotionDrop(battle) {
         const p = this.gameState.player;
-        const b = battle;
         const tier = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).tier;
 
         let dropChance = 0.08; // 일반 몬스터 8%
-        if (b.type === 'mid' || b.type === 'mid_sequential') dropChance = 0.35; // 중간 보스 35%
-        else if (b.isBoss || b.type === 'boss') dropChance = 0.7; // 최종 보스 70%
+        if (battle.type === 'mid' || battle.type === 'mid_sequential') dropChance = 0.35; // 중간 보스 35%
+        else if (battle.isBoss || battle.type === 'boss') dropChance = 0.7; // 최종 보스 70%
 
         if (Math.random() < dropChance) {
             // 현재 던전 티어에 맞는 포션 풀 구성
@@ -2209,9 +2231,6 @@ class Game {
     }
 
     /**
-     * 대장간 모달을 엽니다. 장착 중인 무기와 방어구 중 강화할 대상을 선택합니다.
-     */
-    /**
      * 대장간: 강화와 제작 탭을 제공합니다.
      */
     openBlacksmith(activeTab = 'reinforce') {
@@ -2264,19 +2283,7 @@ class Game {
             if (!it) return;
             const plus = it.plus || 0;
             const cost = Math.floor(100 * (it.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
-            let successRate = 0, downRate = 0, destroyRate = 0, failRate = 0;
-
-            if (plus < 4) { successRate = 100; }
-            else if (plus < 7) {
-                successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
-                downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
-                failRate = 100 - successRate - downRate;
-            } else {
-                successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
-                downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
-                destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
-                failRate = 100 - successRate - destroyRate - downRate;
-            }
+            const { successRate, downRate, destroyRate, failRate } = this.getReinforcementRates(plus);
 
             const getStatPreview = (statKey, label) => {
                 if (!it[statKey]) return '';
@@ -2379,14 +2386,9 @@ class Game {
 
         let canCraft = isUnlocked && p.gold >= (craftData.gold || 0);
 
-        const getOwnedCount = (mName) => {
-            const item = p.inventory.find(it => it.name === mName && it.category === 'MATERIAL');
-            return item ? (item.count || 1) : 0;
-        };
-
         if (craftData.materials) {
             for (const [matName, needed] of Object.entries(craftData.materials)) {
-                const owned = getOwnedCount(matName);
+                const owned = this.getOwnedMaterialCount(matName);
                 const suffice = owned >= needed;
                 if (!suffice) canCraft = false;
                 h += `
@@ -2444,16 +2446,11 @@ class Game {
         const cat = type === 'blacksmith' ? (id.startsWith('w') ? 'WEAPONS' : 'ARMORS') : 'CONSUMABLES';
         const itData = GAME_DATA.ITEMS[cat].find(i => i.id === id);
 
-        const getOwnedCount = (mName) => {
-            const item = p.inventory.find(it => it.name === mName && it.category === 'MATERIAL');
-            return item ? (item.count || 1) : 0;
-        };
-
         // 최종 검증
         if (p.gold < (craftData.gold || 0)) return;
         if (craftData.materials) {
             for (const [matName, needed] of Object.entries(craftData.materials)) {
-                if (getOwnedCount(matName) < needed) return;
+                if (this.getOwnedMaterialCount(matName) < needed) return;
             }
         }
         if (p.inventory.length >= p.invMax) { alert('가방 가득 참'); return; }
@@ -2501,27 +2498,12 @@ class Game {
 
         const r = Math.random() * 100;
         let result = 'success'; // success, fail, down, destroy
+        const { successRate, downRate, destroyRate } = this.getReinforcementRates(plus);
 
-        if (plus < 4) {
-            // +4단계까지는 100% 성공
-            result = 'success';
-        } else if (plus < 7) {
-            // +5 ~ +7 구간: 실패 및 하락 확률 존재
-            const successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
-            const downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
-            if (r < successRate) result = 'success';
-            else if (r < successRate + downRate) result = 'down';
-            else result = 'fail';
-        } else {
-            // +8 ~ +10 구간: 파괴 확률 발생
-            const successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
-            const downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
-            const destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
-            if (r < successRate) result = 'success';
-            else if (r < successRate + destroyRate) result = 'destroy';
-            else if (r < successRate + destroyRate + downRate) result = 'down';
-            else result = 'fail';
-        }
+        if (r < successRate) result = 'success';
+        else if (destroyRate > 0 && r < successRate + destroyRate) result = 'destroy';
+        else if (downRate > 0 && r < successRate + (destroyRate || 0) + downRate) result = 'down';
+        else result = 'fail';
 
         // 강화 결과 처리 및 로그 출력
         if (result === 'success') {
