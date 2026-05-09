@@ -1303,7 +1303,7 @@ class Game {
             const panel = document.getElementById('action-panel');
 
             if (!midInfo) {
-                // 중간 보스를 한 번도 처격하지 않은 경우
+                // 중간 보스를 한 번도 처치하지 않은 경우
                 this.log('심상치 않은 기운이 느껴집니다... 중간 보스 출현!', 'system');
                 panel.innerHTML = `<button onclick="game.startBattle(GAME_DATA.TOWNS.find(t => t.id === '${wState.currentLocation}').dungeon, false, ${step}, 'mid')">중간 보스 도전</button>
                                    <button class="secondary" onclick="game.exitDungeon()">귀환</button>`;
@@ -1382,7 +1382,8 @@ class Game {
         const r = Math.random();
         const dg = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).dungeon;
 
-        if (r < 0.50) {
+        this.handleTranscendenceEvent(dg, step);
+        /*if (r < 0.50) {
             // 50% 확률로 일반 몬스터와 조우
             this.startBattle(dg, false, step);
         } else if (r < 0.68) {
@@ -1398,7 +1399,7 @@ class Game {
             // 16% 확률로 평화롭게 지나감
             this.log('길이 고요합니다. 아무 일도 일어나지 않았습니다.', 'system');
             this.exploreLoop(dg, step + 1);
-        }
+        }*/
     }
 
     /**
@@ -1424,7 +1425,7 @@ class Game {
 
         this.currentBattle = {
             monster: m,
-            isBoss: true,
+            isBoss: false,
             type: 'transcendence',
             step,
             dungeon: dg,
@@ -1938,7 +1939,7 @@ class Game {
         this.currentBattle = null;
         document.getElementById('monster-status').classList.add('hidden');
 
-        if (bType === 'normal') this.exploreLoop(bData.dungeon, bData.step + 1);
+        if (bType === 'normal' || bType === 'transcendence') this.exploreLoop(bData.dungeon, bData.step + 1);
         else if (bType === 'mid') { document.body.classList.remove('in-dungeon'); this.renderTownActions(); }
         else if (bType === 'mid_sequential') { /* handled in victory */ }
         else if (bData.isBoss || bType === 'boss') { document.body.classList.remove('in-dungeon'); this.renderTownActions(); }
