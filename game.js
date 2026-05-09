@@ -265,7 +265,7 @@ class Game {
 
         document.getElementById('hp-bar').style.width = (p.hp / p.hpMax * 100) + '%';
         document.getElementById('mp-bar').style.width = (p.mp / p.mpMax * 100) + '%';
-        
+
         // XP 바 처리 (레벨 100 달성 시 가득 채우고 비활성화)
         const xpBar = document.getElementById('xp-bar');
         if (p.level >= 100) {
@@ -1793,7 +1793,7 @@ class Game {
                     if (skill.id === 'ws5') b.activeBuffs.push({ type: 'retribution', name: '심판', duration: 3 });
                     if (skill.id === 'ws7') d = Math.max(1, (atkStat * skill.mult) - (m.def * 0.5));
                     if (skill.id === 'ws8') b.activeBuffs.push({ type: 'berserk', name: '광폭', duration: 3 });
-                    if (skill.id === 'ws10') { d = atkStat * skill.mult; b.activeBuffs.push({ type: 'lordDescent', name: '소진', duration: 2 }); }
+                    if (skill.id === 'ws10') { d = atkStat * skill.mult; b.activeBuffs.push({ type: 'lordDescent', name: '소진', duration: 3 }); }
 
                     if (skill.id === 'ms3') b.activeBuffs.push({ type: 'frozenSpear', name: '둔화', duration: 2 });
                     if (skill.id === 'ms4') b.activeBuffs.push({ type: 'manaShield', name: '실드', duration: 99 });
