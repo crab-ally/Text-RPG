@@ -265,9 +265,20 @@ class Game {
 
         document.getElementById('hp-bar').style.width = (p.hp / p.hpMax * 100) + '%';
         document.getElementById('mp-bar').style.width = (p.mp / p.mpMax * 100) + '%';
-        document.getElementById('xp-bar').style.width = (p.xp / p.xpNext * 100) + '%';
-        document.getElementById('xp-cur').innerText = Math.floor(p.xp);
-        document.getElementById('xp-max').innerText = p.xpNext;
+        
+        // XP 바 처리 (레벨 100 달성 시 가득 채우고 비활성화)
+        const xpBar = document.getElementById('xp-bar');
+        if (p.level >= 100) {
+            xpBar.style.width = '100%';
+            xpBar.classList.add('max-level');
+            document.getElementById('xp-cur').innerText = 'MAX';
+            document.getElementById('xp-max').innerText = 'LEVEL';
+        } else {
+            xpBar.style.width = (p.xp / p.xpNext * 100) + '%';
+            xpBar.classList.remove('max-level');
+            document.getElementById('xp-cur').innerText = Math.floor(p.xp);
+            document.getElementById('xp-max').innerText = p.xpNext;
+        }
 
         // 현재 위치 정보
         const town = GAME_DATA.TOWNS.find(t => t.id === w.currentLocation);
@@ -1382,8 +1393,7 @@ class Game {
         const r = Math.random();
         const dg = GAME_DATA.TOWNS.find(t => t.id === this.gameState.world.currentLocation).dungeon;
 
-        this.handleTranscendenceEvent(dg, step);
-        /*if (r < 0.50) {
+        if (r < 0.50) {
             // 50% 확률로 일반 몬스터와 조우
             this.startBattle(dg, false, step);
         } else if (r < 0.68) {
@@ -1399,7 +1409,7 @@ class Game {
             // 16% 확률로 평화롭게 지나감
             this.log('길이 고요합니다. 아무 일도 일어나지 않았습니다.', 'system');
             this.exploreLoop(dg, step + 1);
-        }*/
+        }
     }
 
     /**
@@ -1635,7 +1645,9 @@ class Game {
         if (p.job === '전사') skills = GAME_DATA.WARRIOR_SKILLS;
         else if (p.job === '마법사') skills = GAME_DATA.MAGE_SKILLS;
 
-        const activeSkills = skills.filter(s => s.type === 'active' && p.level >= s.reqLv);
+        const activeSkills = skills
+            .filter(s => s.type === 'active' && p.level >= s.reqLv)
+            .sort((a, b) => b.reqLv - a.reqLv);
 
         if (activeSkills.length === 0) {
             this.log('사용 가능한 스킬이 없습니다.', 'system');
@@ -2055,12 +2067,16 @@ class Game {
         if (!b || !b.monster) return;
 
         const m = b.monster;
-        const xp = m.xp || 0;
+        const xp = p.level >= 100 ? 0 : (m.xp || 0);
         const g = Math.floor((m.gold || 0) * 1.4); // 몬스터 사냥 골드 40% 상향
         p.xp += xp; p.gold += g;
 
         this.log(`${mN} 처치!`, 'victory');
-        this.log(`${xp} XP, ${g} G 획득.`, 'gain');
+        if (p.level >= 100) {
+            this.log(`${g} G 획득. (최대 레벨)`, 'gain');
+        } else {
+            this.log(`${xp} XP, ${g} G 획득.`, 'gain');
+        }
 
         // 일일 의뢰 진행도 체크 (모든 마을의 처치 의뢰 슬롯 확인)
         Object.values(w.quests || {}).forEach(tQs => {
