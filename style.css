@@ -310,6 +310,18 @@ body {
     box-shadow: 0 0 5px var(--xp-color);
 }
 
+.xp-bar.max-level {
+    background: linear-gradient(90deg, #ffcc00, #fffae6, #ffcc00);
+    background-size: 200% 100%;
+    animation: maxLevelGlow 2s linear infinite;
+    box-shadow: 0 0 10px #ffcc00, 0 0 20px #fffae6;
+}
+
+@keyframes maxLevelGlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
 .stat-group {
     display: flex;
     flex-direction: column;
