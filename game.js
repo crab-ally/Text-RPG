@@ -1085,7 +1085,7 @@ class Game {
                 items.filter(i => {
                     if (cat === 'CONSUMABLES') {
                         // 마을 티어에 맞는 HP/MP 포션 1종씩만 판매
-                        const potionTier = Math.min(tier, 6);
+                        const potionTier = Math.min(tier, 5);
                         return Number(i.tier) === potionTier && (i.hp != null || i.mp != null);
                     }
                     // 현재 마을 티어와 일치하는 아이템만 판매 (신화·초월 등급 제외)
