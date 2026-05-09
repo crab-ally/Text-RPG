@@ -924,7 +924,7 @@ class Game {
     }
 
     /**
-     * 훈련소(수련장) 모달을 엽니다.
+     * 수련장 모달을 엽니다.
      * 모든 스킬을 표시하고, 레벨 조건에 따라 활성화/비활성화하며 강화를 지원합니다.
      */
     openTraining() {
@@ -932,7 +932,7 @@ class Game {
         const skills = p.job === '전사' ? GAME_DATA.WARRIOR_SKILLS : (p.job === '마법사' ? GAME_DATA.MAGE_SKILLS : []);
 
         if (skills.length === 0) {
-            this.showModal('훈련소', '<p>전직 후에 이용 가능합니다.</p>');
+            this.showModal('수련장', '<p>전직 후에 이용 가능합니다.</p>');
             return;
         }
 
@@ -959,7 +959,10 @@ class Game {
                         </div>
                         <span class="shop-item-detail">${this.getSkillDesc(s, currentLv)}</span>
                         <div style="font-size:0.75rem; color:var(--accent-cyan); margin-top:2px;">
-                            강화 효과: ${s.type === 'active' ? '대미지 +10% (복리)' : '효과 +4% (단리)'}
+                            강화 효과: ${s.type === 'active'
+                    ? (s.id === 'ws4' ? '효과 +5% (단리)'
+                        : (s.id === 'ws5' || s.id === 'ws8' ? '효과 +10% (단리)' : '대미지 +10% (복리)'))
+                    : '효과 +4% (단리)'}
                         </div>
                         <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
                             ${s.costVal > 0 ? `${s.costType.toUpperCase()} ${s.costVal} 소모` : '패시브 스킬'} | 요구 Lv.${s.reqLv}
@@ -980,7 +983,7 @@ class Game {
         });
 
         h += '</div>';
-        this.showModal('훈련소', h);
+        this.showModal('수련장', h);
     }
 
     /**
@@ -1679,11 +1682,11 @@ class Game {
                 desc += ` <span style="color:var(--accent-cyan)">[계수: ${currentMult.toFixed(2)}x]</span>`;
             }
             // 액티브 중 % 수치가 있는 스킬들 (철벽 자세, 심판의 반격, 광전사의 혼, 마나 실드, 위상 변환)
-            desc = desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가|효율))/g, (match, p1) => {
+            desc = desc.replace(/(\d+)%(?=\s*(증가|회복|확률|감소|추가|효율|흡수))/g, (match, p1) => {
                 const val = parseInt(p1);
                 let newVal = val;
                 if (s.id === 'ws4') newVal = val + (level * 5); // 피해 감소, 반격 확률 +5%p
-                else if (s.id === 'ws5') newVal = val + (level * 10); // 흡혈량 +10%p (문구에는 없지만 맥락상)
+                else if (s.id === 'ws5') newVal = val + (level * 10); // 흡혈량 +10%p
                 else if (s.id === 'ws8') newVal = val + (level * 10); // 공격력 +10%p
                 else if (s.id === 'ms4') newVal = val - (level * 10); // 흡수 효율 -10%p (낮을수록 좋음)
                 else if (s.id === 'ms8') newVal = val + (level * 10); // 치명타 확률 +10%p
@@ -1700,7 +1703,7 @@ class Game {
             return desc;
         } else {
             // 패시브: % 수치를 찾아서 레벨당 4%p씩 증가시킴
-            return desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가))/g, (match, p1) => {
+            return desc.replace(/(\d+)%(?=\s*(증가|회복|확률|무시|감소|추가|를))/g, (match, p1) => {
                 const val = parseInt(p1);
                 const newVal = val + (level * 4);
                 return `<span style="color:var(--accent-cyan)">${newVal}%</span>`;
@@ -1760,7 +1763,7 @@ class Game {
 
         if (canAttack) {
             let mEva = m.eva || 0;
-            if (b.activeBuffs.some(buff => buff.type === 'frozenSpear')) mEva = Math.max(0, mEva - 20);
+            if (b.activeBuffs.some(buff => buff.type === 'frozenSpear')) mEva = Math.max(0, mEva - 10);
 
             if (Math.random() < mEva / 100 && (!skill || skill.id !== 'ws10')) {
                 this.log(`${m.name}이(가) 공격을 신속하게 회피했습니다!`, 'system');
