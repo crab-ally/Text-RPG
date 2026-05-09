@@ -1810,17 +1810,23 @@ class Game {
 
                 // 스킬 강화 보너스 적용 (강화 레벨당 데미지 10% 복리 증가)
                 if (skill) {
-                    const rLv = p.skillLevels[skill.id] || 0;
-                    d = Math.floor(d * Math.pow(1.10, rLv));
+                    if (skill.id === 'ws4' || skill.id === 'ws8') { d = 0; }
+                    else {
+                        const rLv = p.skillLevels[skill.id] || 0;
+                        d = Math.floor(d * Math.pow(1.10, rLv));
+                    }
                 }
 
-                let criChance = p.cri;
-                if (isCriticalShift) criChance += 50;
+                if (d > 0) {
+                    let criChance = p.cri;
+                    if (isCriticalShift) criChance += 50;
 
-                if (Math.random() < criChance / 100) { d *= 2; this.log(`치명타! ${d} 피해!`, 'crit'); }
-                else if (d > 0) this.log(`${m.name}에게 ${d} 피해.`);
+                    if (Math.random() < criChance / 100) { d *= 2; this.log(`치명타! ${d} 피해!`, 'crit'); }
+                    else this.log(`${m.name}에게 ${d} 피해.`);
+                }
 
                 m.hp -= d;
+
                 this.updateMonsterUI();
             }
         }
@@ -1847,7 +1853,7 @@ class Game {
                 if (b.activeBuffs.some(buff => buff.type === 'ironWall')) {
                     const rLv = p.skillLevels['ws4'] || 0;
                     const reduction = 0.5 + (rLv * 0.05); // 50% -> 55% -> 60% -> 65%
-                    md = Math.floor(md * (1 - reduction));
+                    md = Math.max(1, Math.floor(md * (1 - reduction))); // 최소 1 데미지
                 }
                 if (b.activeBuffs.some(buff => buff.type === 'berserk')) md = Math.floor(md * 1.5);
 
