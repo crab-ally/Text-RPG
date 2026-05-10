@@ -173,7 +173,7 @@ const GAME_DATA = {
         { id: 'ms1', name: '화염구', type: 'active', reqLv: 10, costType: 'mp', costVal: 15, desc: '기본적인 마법 화염 피해를 입힙니다.', mult: 1.5, cooldown: 0 },
         { id: 'ms2', name: '마력 친화', type: 'passive', reqLv: 20, costType: 'none', costVal: 0, desc: '최대 MP의 20%가 증가하며, 매 턴 최대 MP의 5%를 자연 회복합니다.', cooldown: 0 },
         { id: 'ms3', name: '빙결의 창', type: 'active', reqLv: 30, costType: 'mp', costVal: 35, desc: '얼음 창을 날려 피해를 주고, 2턴 동안 적의 회피율 10%를 감소시킵니다.', mult: 1.7, cooldown: 3 },
-        { id: 'ms4', name: '마나 실드', type: 'active', reqLv: 40, costType: 'mp', costVal: 0, desc: '활성화 시 피해를 HP 대신 MP로 150% 효율로 흡수합니다. 턴당 MP 15 유지 비용.', cooldown: 5 },
+        { id: 'ms4', name: '마나실드', type: 'passive', reqLv: 40, costType: 'none', costVal: 0, desc: '피해를 HP 대신 MP로 150% 효율로 흡수합니다. 턴당 MP 15 유지 비용.', cooldown: 0 },
         { id: 'ms5', name: '시간 파열', type: 'active', reqLv: 50, costType: 'mp', costVal: 60, desc: '시간 균열을 일으켜 다음 턴 플레이어의 공격력을 2배로 만듭니다.', mult: 1.1, cooldown: 6 },
         { id: 'ms6', name: '집중', type: 'passive', reqLv: 60, costType: 'none', costVal: 0, desc: '현재 MP가 70% 이상일 때 마력과 치명타 확률이 15% 증가합니다.', cooldown: 0 },
         { id: 'ms7', name: '폭렬 마법', type: 'active', reqLv: 70, costType: 'mp', costVal: 100, desc: '강력한 폭발을 일으키며, 적에게 3턴간 화상을 입힙니다.', mult: 2.2, cooldown: 5 },

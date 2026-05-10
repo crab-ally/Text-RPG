@@ -699,7 +699,8 @@ class Game {
                 this.currentBattle.activeBuffs.forEach(b => {
                     const span = document.createElement('span');
                     span.className = 'buff-item';
-                    span.innerText = `${b.name} (${b.duration}턴)`;
+                    const durationText = b.duration > 100 ? '' : ` (${b.duration}턴)`;
+                    span.innerText = `${b.name}${durationText}`;
                     pList.appendChild(span);
                 });
             }
@@ -1592,6 +1593,12 @@ class Game {
             turnCount: 0
         };
 
+        // 마법사 마나실드 자동 적용
+        const p = this.gameState.player;
+        if (p.job === '마법사' && p.level >= 40) {
+            this.currentBattle.activeBuffs.push({ type: 'manaShield', name: '마나실드', duration: 999 });
+        }
+
         // 몬스터 체력 바 및 UI 표시
         const mStatus = document.getElementById('monster-status');
         mStatus.classList.remove('hidden');
@@ -1689,7 +1696,7 @@ class Game {
         const level = isBattle ? (this.gameState.player.skillLevels[s.id] || 0) : rLv;
         let desc = s.desc;
 
-        if (s.type === 'active') {
+        if (s.type === 'active' || s.id === 'ms4') {
             if (s.mult) {
                 const currentMult = s.mult * Math.pow(1.10, level);
                 desc += ` <span style="color:var(--accent-cyan)">[계수: ${currentMult.toFixed(2)}x]</span>`;
@@ -1796,7 +1803,6 @@ class Game {
                     if (skill.id === 'ws10') { d = atkStat * skill.mult; b.activeBuffs.push({ type: 'lordDescent', name: '소진', duration: 3 }); }
 
                     if (skill.id === 'ms3') b.activeBuffs.push({ type: 'frozenSpear', name: '둔화', duration: 2 });
-                    if (skill.id === 'ms4') b.activeBuffs.push({ type: 'manaShield', name: '실드', duration: 99 });
                     if (skill.id === 'ms5') b.activeBuffs.push({ type: 'timeRift', name: '파열', duration: 2 });
                     if (skill.id === 'ms7') this.applyStatusEffect('monster', 'burn', 3);
                     if (skill.id === 'ms8') b.activeBuffs.push({ type: 'phaseShift', name: '위상', duration: 1 });
@@ -1860,14 +1866,21 @@ class Game {
                 if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
                     const rLv = p.skillLevels['ms4'] || 0;
                     const ratio = 1.5 - (rLv * 0.1); // 1.5 -> 1.4 -> 1.3 -> 1.2
-                    let mpDmg = Math.floor(md * ratio);
-                    if (p.mp >= mpDmg) {
-                        p.mp -= mpDmg;
+                    let mpDmgNeeded = Math.floor(md * ratio);
+
+                    if (p.mp >= mpDmgNeeded) {
+                        p.mp -= mpDmgNeeded;
                         md = 0;
-                        this.log(`마나 실드로 피해를 방어했습니다! (MP -${mpDmg})`, 'gain');
+                        this.log(`마나실드로 피해를 완벽히 방어했습니다! (MP -${mpDmgNeeded})`, 'gain');
+                    } else if (p.mp > 0) {
+                        // 보유한 마나만큼 최대한 흡수
+                        let absorbedMd = Math.floor(p.mp / ratio);
+                        let actualMpUsed = Math.floor(p.mp);
+                        p.mp = 0;
+                        md -= absorbedMd;
+                        this.log(`마나가 부족하여 일부만 방어했습니다! (MP -${actualMpUsed}, 남은 피해: ${md})`, 'lose');
                     } else {
-                        b.activeBuffs = b.activeBuffs.filter(buff => buff.type !== 'manaShield');
-                        this.log(`마나가 부족하여 마나 실드가 깨졌습니다!`, 'lose');
+                        this.log(`마나가 없어 마나실드가 작동하지 않았습니다!`, 'lose');
                     }
                 }
 
@@ -2030,8 +2043,11 @@ class Game {
         if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
             const rLv = p.skillLevels['ms4'] || 0;
             const cost = Math.max(1, 15 - (rLv * 2)); // 15 -> 13 -> 11 -> 9
-            if (p.mp >= cost) { p.mp -= cost; }
-            else { b.activeBuffs = b.activeBuffs.filter(buff => buff.type !== 'manaShield'); this.log(`유지 비용 부족으로 마나 실드가 해제되었습니다.`, 'system'); }
+            const actualCost = Math.min(p.mp, cost);
+            p.mp -= actualCost;
+            if (actualCost > 0 && actualCost < cost) {
+                this.log(`마나가 부족하여 유지 비용을 일부만 지불했습니다.`, 'lose');
+            }
         }
 
         if (p.job === '전사' && p.level >= 90 && (p.hp / p.hpMax) <= 0.3) {
