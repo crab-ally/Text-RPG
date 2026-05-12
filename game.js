@@ -2033,22 +2033,29 @@ class Game {
 
         let mpRecoveryBlocked = b.activeBuffs.some(buff => buff.type === 'mpBlock');
 
-        if (p.job === '마법사' && !mpRecoveryBlocked) {
-            if (p.level >= 20) {
-                const rLv = p.skillLevels['ms2'] || 0;
-                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * (0.05 + rLv * 0.04)));
-            }
-        }
-
+        /* 마나 실드 턴당 mp 소모 로직 */
         if (b.activeBuffs.some(buff => buff.type === 'manaShield')) {
             const rLv = p.skillLevels['ms4'] || 0;
             const cost = Math.max(1, 15 - (rLv * 2)); // 15 -> 13 -> 11 -> 9
             const actualCost = Math.min(p.mp, cost);
             p.mp -= actualCost;
+            this.log(`[마나 실드 유지] MP ${actualCost} 소모`, 'lose');
             if (actualCost > 0 && actualCost < cost) {
                 this.log(`마나가 부족하여 유지 비용을 일부만 지불했습니다.`, 'lose');
             }
         }
+
+        /* 마력 친화 턴당 mp 회복 로직 */
+        if (p.job === '마법사' && !mpRecoveryBlocked) {
+            if (p.level >= 20) {
+                const rLv = p.skillLevels['ms2'] || 0;
+                let beforeMP = p.mp;
+                p.mp = Math.min(p.mpMax, p.mp + Math.floor(p.mpMax * (0.05 + rLv * 0.04)));
+                let mpRecovery = p.mp - beforeMP;
+                this.log(`[마력 친화] MP ${mpRecovery} 회복`, 'gain');
+            }
+        }
+
 
         if (p.job === '전사' && p.level >= 90 && (p.hp / p.hpMax) <= 0.3) {
             const rLv = p.skillLevels['ws9'] || 0;
