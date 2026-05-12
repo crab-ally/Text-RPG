@@ -962,6 +962,25 @@ class Game {
             const skillTier = Math.floor(s.reqLv / 10);
             const cost = Math.floor(2000 * Math.pow(2.5, skillTier - 1) * (currentLv + 1));
 
+            let reinforceText;
+
+            // 엑티브
+            if (s.type === 'active') {
+                if (s.id === 'ws4') {
+                    reinforceText = '효과 +5% (단리)';
+                } else if (s.id === 'ws5' || s.id === 'ws8') {
+                    reinforceText = '효과 +10% (단리)';
+                } else if (s.id === 'ms8') {    // 더미
+                    reinforceText = '확률 +10%';
+                } else {
+                    reinforceText = '대미지 +10% (복리)';
+                }
+            } else {
+                // 패시브
+                if (s.id === 'ms4') { reinforceText = '효율 -10%, 턴탕 MP -2'; }
+                else { reinforceText = '효과 +4% (단리)'; }
+            }
+
             h += `
                 <div class="shop-item ${!isUnlocked ? 'locked' : ''}" style="${!isUnlocked ? 'opacity: 0.5; filter: grayscale(1);' : ''}">
                     <div class="shop-item-info">
@@ -971,10 +990,7 @@ class Game {
                         </div>
                         <span class="shop-item-detail">${this.getSkillDesc(s, currentLv)}</span>
                         <div style="font-size:0.75rem; color:var(--accent-cyan); margin-top:2px;">
-                            강화 효과: ${s.type === 'active'
-                    ? (s.id === 'ws4' ? '효과 +5% (단리)'
-                        : (s.id === 'ws5' || s.id === 'ws8' ? '효과 +10% (단리)' : '대미지 +10% (복리)'))
-                    : '효과 +4% (단리)'}
+                            강화 효과: ${reinforceText}
                         </div>
                         <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
                             ${s.costVal > 0 ? `${s.costType.toUpperCase()} ${s.costVal} 소모` : '패시브 스킬'} | 요구 Lv.${s.reqLv}
@@ -1808,7 +1824,7 @@ class Game {
                     if (skill.id === 'ms8') b.activeBuffs.push({ type: 'phaseShift', name: '위상', duration: 1 });
                     if (skill.id === 'ms10') {
                         d = (atkStat * skill.mult) + (p.mp * 2);
-                        b.activeBuffs.push({ type: 'mpBlock', name: '마나차단', duration: 2 });
+                        b.activeBuffs.push({ type: 'mpBlock', name: '마나차단', duration: 3 });
                     }
                 }
 
@@ -1816,7 +1832,7 @@ class Game {
 
                 // 스킬 강화 보너스 적용 (강화 레벨당 데미지 10% 복리 증가)
                 if (skill) {
-                    if (skill.id === 'ws4' || skill.id === 'ws8') { d = 0; }
+                    if (skill.id === 'ws4' || skill.id === 'ws8' || skill.id === 'ms5' || skill.id === 'ms8') { d = 0; }
                     else {
                         const rLv = p.skillLevels[skill.id] || 0;
                         d = Math.floor(d * Math.pow(1.10, rLv));
