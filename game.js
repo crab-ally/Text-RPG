@@ -1105,6 +1105,11 @@ class Game {
                         const potionTier = Math.min(tier, 5);
                         return Number(i.tier) === potionTier && (i.hp != null || i.mp != null);
                     }
+                    if (cat === 'WEAPONS') {
+                        // 직업에 맞는 무기만 필터링 (초보자는 1티어 전체 노출)
+                        const isJobMatch = (p.job === '초보자' && i.tier === 1) || i.job === p.job;
+                        return isJobMatch && (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
+                    }
                     // 현재 마을 티어와 일치하는 아이템만 판매 (신화·초월 등급 제외)
                     return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
                 }).forEach(it => {
@@ -1497,7 +1502,13 @@ class Game {
         } else {
             // 5% 확률: 해당 티어 수준의 장비 (무기 또는 갑옷)
             const type = Math.random() < 0.5 ? 'WEAPONS' : 'ARMORS';
-            const pool = GAME_DATA.ITEMS[type].filter(i => i.tier === tier);
+            let pool = GAME_DATA.ITEMS[type].filter(i => i.tier === tier);
+
+            if (type === 'WEAPONS') {
+                // 직업에 맞는 무기만 필터링
+                pool = pool.filter(i => i.job === p.job || (p.job === '초보자' && i.tier === 1));
+            }
+
             if (pool.length > 0) {
                 const item = { ...pool[Math.floor(Math.random() * pool.length)], category: type, count: 1, plus: 0 };
                 if (p.inventory.length < p.invMax) {
@@ -2272,9 +2283,13 @@ class Game {
      * 초월 장비 드랍 처리
      */
     handleTranscendenceDrop(dg) {
-        const p = this.gameState.player;
         const type = Math.random() < 0.5 ? 'WEAPONS' : 'ARMORS';
-        const item = GAME_DATA.ITEMS[type].find(i => i.grade === '초월');
+        let item;
+        if (type === 'WEAPONS') {
+            item = GAME_DATA.ITEMS[type].find(i => i.grade === '초월' && (i.job === p.job || (p.job === '초보자' && i.job === '전사')));
+        } else {
+            item = GAME_DATA.ITEMS[type].find(i => i.grade === '초월');
+        }
 
         if (item && p.inventory.length < p.invMax) {
             p.inventory.push({ ...item, category: type, count: 1, plus: 0 });
