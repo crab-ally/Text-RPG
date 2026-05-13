@@ -99,13 +99,22 @@ const GAME_DATA = {
     ITEMS: {
         // 무기 — 티어별 공격력 상승, 신화·초월 등급은 제작 전용 (price: 0)
         WEAPONS: [
-            { id: 'w1', name: '낡은 검', grade: '일반', tier: 1, atk: 12, price: 50 },
-            { id: 'w2', name: '날카로운 검', grade: '고급', tier: 2, atk: 35, price: 1000 },
-            { id: 'w3', name: '정교한 단검', grade: '레어', tier: 3, atk: 90, price: 10000 },
-            { id: 'w4', name: '기사단의 대검', grade: '영웅', tier: 4, atk: 250, price: 100000 },
-            { id: 'w5', name: '성스러운 성검', grade: '전설', tier: 5, atk: 800, price: 1000000 },
-            { id: 'w6', name: '혼돈의 파괴자', grade: '신화', tier: 6, atk: 2800, price: 0 },
-            { id: 'w7', name: '공허의 종결자', grade: '초월', tier: 7, atk: 9000, price: 0 }
+            // 전사용 무기
+            { id: 'w1', name: '낡은 롱소드', grade: '일반', tier: 1, atk: 12, price: 50, job: '전사' },
+            { id: 'w2', name: '강철 도끼', grade: '고급', tier: 2, atk: 35, price: 1000, job: '전사' },
+            { id: 'w3', name: '정교한 클레이모어', grade: '레어', tier: 3, atk: 90, price: 10000, job: '전사' },
+            { id: 'w4', name: '기사단의 대검', grade: '영웅', tier: 4, atk: 250, price: 100000, job: '전사' },
+            { id: 'w5', name: '성스러운 성검', grade: '전설', tier: 5, atk: 800, price: 1000000, job: '전사' },
+            { id: 'w6', name: '혼돈의 파괴자', grade: '신화', tier: 6, atk: 2800, price: 0, job: '전사' },
+            { id: 'w7', name: '공허의 종결자', grade: '초월', tier: 7, atk: 9000, price: 0, job: '전사' },
+            // 마법사용 무기
+            { id: 'mw1', name: '낡은 지팡이', grade: '일반', tier: 1, atk: 12, price: 50, job: '마법사' },
+            { id: 'mw2', name: '수정 구슬', grade: '고급', tier: 2, atk: 35, price: 1000, job: '마법사' },
+            { id: 'mw3', name: '현자의 마법서', grade: '레어', tier: 3, atk: 90, price: 10000, job: '마법사' },
+            { id: 'mw4', name: '대마법사의 지팡이', grade: '영웅', tier: 4, atk: 250, price: 100000, job: '마법사' },
+            { id: 'mw5', name: '성스러운 마법봉', grade: '전설', tier: 5, atk: 800, price: 1000000, job: '마법사' },
+            { id: 'mw6', name: '심연의 눈', grade: '신화', tier: 6, atk: 2800, price: 0, job: '마법사' },
+            { id: 'mw7', name: '공허의 창조자', grade: '초월', tier: 7, atk: 9000, price: 0, job: '마법사' }
         ],
         // 방어구 — 티어별 방어력 상승
         ARMORS: [
@@ -138,6 +147,7 @@ const GAME_DATA = {
     // 연금술 NPC에서 사용하는 레시피 — targetId로 제작 대상 아이템 참조
     RECIPES: {
         'r_w6': { id: 'r_w6', name: '혼돈의 파괴자 레시피', targetId: 'w6', category: 'WEAPONS' },
+        'r_mw6': { id: 'r_mw6', name: '심연의 눈 레시피', targetId: 'mw6', category: 'WEAPONS' },
         'r_a6': { id: 'r_a6', name: '심연의 갑주 레시피', targetId: 'a6', category: 'ARMORS' },
         'r_p6': { id: 'r_p6', name: '순수한 생명수 레시피', targetId: 'p6', category: 'CONSUMABLES' },
         'r_mp6': { id: 'r_mp6', name: '순수한 마나수 레시피', targetId: 'mp6', category: 'CONSUMABLES' }
@@ -147,6 +157,7 @@ const GAME_DATA = {
     // 아이템 ID를 키로, 필요 재료(드롭 아이템 이름: 수량)와 골드 비용 정의
     CRAFTING: {
         'w6': { materials: { '용의 핵심': 10, '타락한 깃털': 50 }, gold: 500000 },
+        'mw6': { materials: { '용의 핵심': 10, '타락한 깃털': 50 }, gold: 500000 },
         'a6': { materials: { '용의 핵심': 8, '검은 성서': 60 }, gold: 500000 },
         'p6': { materials: { '공허의 정수': 5 }, gold: 100000 },
         'mp6': { materials: { '공허의 정수': 5 }, gold: 100000 }
