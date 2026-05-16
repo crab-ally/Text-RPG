@@ -1047,6 +1047,18 @@ class Game {
     changeJob(job) {
         const p = this.gameState.player;
         p.job = job;
+
+        // 직업에 맞지 않는 무기 자동 해제
+        if (p.equipment.weapon) {
+            const w = p.equipment.weapon;
+            const isMatch = (p.job === '초보자' && w.tier === 1) || w.job === p.job;
+            if (!isMatch) {
+                p.inventory.push(p.equipment.weapon);
+                p.equipment.weapon = null;
+                this.log('직업이 변경되어 기존 무기가 해제되었습니다.', 'system');
+            }
+        }
+
         if (job === '전사') {
             p.hpMax = Math.floor(p.hpMax * 1.35);
             p.hp = p.hpMax;
@@ -1299,6 +1311,11 @@ class Game {
             it.count--;
             if (it.count <= 0) p.inventory.splice(i, 1);
         } else if (it.category === 'WEAPONS') {
+            const isJobMatch = (p.job === '초보자' && it.tier === 1) || it.job === p.job;
+            if (!isJobMatch) {
+                this.log(`${it.job} 전용 무기입니다.`, 'system');
+                return;
+            }
             const old = p.equipment.weapon; p.equipment.weapon = it; p.inventory.splice(i, 1);
             if (old) p.inventory.push(old);
         } else if (it.category === 'ARMORS') {
