@@ -339,7 +339,22 @@ class Game {
 
         p.equipment.accessory.forEach((acc, i) => {
             const elId = `slot-accessory-${i + 1}`;
-            setSlotItem(elId, acc);
+            const slotEl = document.getElementById(elId);
+            const unlockLv = i === 0 ? 20 : (i === 1 ? 60 : 100);
+            const isUnlocked = p.level >= unlockLv;
+
+            if (isUnlocked) {
+                slotEl.classList.remove('locked');
+                setSlotItem(elId, acc);
+            } else {
+                slotEl.classList.add('locked');
+                const el = slotEl.querySelector('.slot-item');
+                el.innerText = `Lv.${unlockLv} 해금`;
+                el.className = 'slot-item';
+                slotEl.onmouseenter = null;
+                slotEl.onmousemove = null;
+                slotEl.onmouseleave = null;
+            }
         });
 
         // 저장 버튼 및 던전 카운터 노출 여부 관리 (마을에서만 저장 가능)
@@ -390,6 +405,48 @@ class Game {
                     <span class="tooltip-stat-value">${getStatValue('def')}</span>
                 </div>
             `;
+        }
+
+        // 장신구 옵션 표시
+        const options = [
+            { key: 'cri', label: '치명타율', unit: '%' },
+            { key: 'eva', label: '회피율', unit: '%' },
+            { key: 'pen', label: '방어관통', unit: '%' },
+            { key: 'hpRegen', label: 'HP재생', unit: '%' },
+            { key: 'mpRegen', label: 'MP재생', unit: '%' },
+            { key: 'lifeSteal', label: '흡혈', unit: '%' }
+        ];
+
+        options.forEach(opt => {
+            if (item[opt.key]) {
+                const val = item[opt.key] + (item.plus || 0);
+                statsHtml += `
+                    <div class="tooltip-stat-row">
+                        <span class="tooltip-stat-label">${opt.label}</span>
+                        <span class="tooltip-stat-value">+${val}${opt.unit}</span>
+                    </div>
+                `;
+            }
+        });
+
+        // 초월 옵션 표시
+        if (item.grade === '초월') {
+            const transOpts = [
+                { key: 'extraDmg', label: '추가 피해 확률', unit: '%' },
+                { key: 'execution', label: '처형 기준 HP', unit: '%' },
+                { key: 'nullify', label: '피해 무효 확률', unit: '%' },
+                { key: 'extraTurn', label: '회피 시 추가 턴 확률', unit: '%' }
+            ];
+            transOpts.forEach(opt => {
+                if (item[opt.key]) {
+                    statsHtml += `
+                        <div class="tooltip-stat-row transcendence" style="color:var(--accent-cyan); border-top:1px solid rgba(0,242,255,0.2); padding-top:4px; margin-top:4px;">
+                            <span class="tooltip-stat-label">${opt.label}</span>
+                            <span class="tooltip-stat-value">${item[opt.key]}${opt.unit}</span>
+                        </div>
+                    `;
+                }
+            });
         }
 
         tooltip.innerHTML = `
@@ -481,20 +538,37 @@ class Game {
     /**
      * 강화 단계별 성공, 하락, 파괴 확률을 반환합니다.
      */
-    getReinforcementRates(plus) {
+    getReinforcementRates(plus, isAcc = false) {
         let successRate = 0, downRate = 0, destroyRate = 0, failRate = 0;
-        if (plus < 4) {
-            successRate = 100;
-        } else if (plus < 7) {
-            successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
-            downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
-            failRate = 100 - successRate - downRate;
+
+        if (isAcc) {
+            // 장신구 전용 확률 (+5강 만렙 기준)
+            if (plus === 0) {
+                successRate = 85;
+            } else if (plus === 1) {
+                successRate = 70; downRate = 10;
+            } else if (plus === 2) {
+                successRate = 55; downRate = 20; destroyRate = 5;
+            } else if (plus === 3) {
+                successRate = 40; downRate = 30; destroyRate = 10;
+            } else { // +4 -> +5
+                successRate = 25; downRate = 35; destroyRate = 15;
+            }
         } else {
-            successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
-            downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
-            destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
-            failRate = 100 - successRate - destroyRate - downRate;
+            // 무기/방어구 확률 (+10강 만렙 기준)
+            if (plus < 4) {
+                successRate = 100;
+            } else if (plus < 7) {
+                successRate = plus === 4 ? 80 : (plus === 5 ? 65 : 50);
+                downRate = plus === 4 ? 5 : (plus === 5 ? 10 : 20);
+            } else {
+                successRate = plus === 7 ? 35 : (plus === 8 ? 25 : 18);
+                downRate = plus === 7 ? 25 : (plus === 8 ? 25 : 30);
+                destroyRate = plus === 7 ? 10 : (plus === 8 ? 15 : 20);
+            }
         }
+
+        failRate = Math.max(0, 100 - successRate - downRate - destroyRate);
         return { successRate, downRate, destroyRate, failRate };
     }
 
@@ -604,10 +678,23 @@ class Game {
         let baseAtk = 10 + (p.level - 1) * 3 + getEqStat(p.equipment.weapon, 'atk') + getEqStat(p.equipment.armor, 'atk');
         let baseDef = 5 + (p.level - 1) * 2 + getEqStat(p.equipment.weapon, 'def') + getEqStat(p.equipment.armor, 'def');
 
+        // 장신구 옵션 합산
+        let accCri = 0, accEva = 0, accPen = 0;
+        p.equipment.accessory.forEach(acc => {
+            if (acc) {
+                accCri += (acc.cri || 0) + (acc.plus || 0);
+                accEva += (acc.eva || 0) + (acc.plus || 0);
+                accPen += (acc.pen || 0) + (acc.plus || 0);
+                if (acc.atk) baseAtk += getEqStat(acc, 'atk');
+                if (acc.def) baseDef += getEqStat(acc, 'def');
+            }
+        });
+
         p.atk = baseAtk;
         p.def = baseDef;
-        p.cri = 5;
-        p.eva = 5;
+        p.cri = 5 + accCri;
+        p.eva = 5 + accEva;
+        p.pen = accPen; // 관통력 스탯 추가
         p.mag = 0;
 
         // 직업별 기본 보정 및 패시브
@@ -1122,16 +1209,39 @@ class Game {
                         const isJobMatch = (p.job === '초보자' && i.tier === 1) || i.job === p.job;
                         return isJobMatch && (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
                     }
-                    // 현재 마을 티어와 일치하는 아이템만 판매 (신화·초월 등급 제외)
-                    return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
+                    if (cat === 'ARMORS') {
+                        // 현재 마을 티어와 일치하는 방어구만 필터링
+                        return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
+                    }
+                    // 현재 마을 티어와 일치하는 장신구만 필터링
+                    return (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 6);
                 }).forEach(it => {
                     const pr = Math.floor(it.price * inf);
                     const isBought = (cat !== 'CONSUMABLES' && this.purchasedInSession.has(it.id));
+                    const getDetail = (item) => {
+                        if (cat === 'MATERIAL') return '';
+                        if (item.atk) return 'ATK+' + item.atk;
+                        if (item.def) return 'DEF+' + item.def;
+                        if (item.hp) return 'HP+' + item.hp;
+                        if (item.mp) return 'MP+' + item.mp;
+
+                        const opts = [
+                            { k: 'cri', l: '치명타' }, { k: 'eva', l: '회피' }, { k: 'lifeSteal', l: '흡혈' },
+                            { k: 'hpRegen', l: 'HP재생' }, { k: 'mpRegen', l: 'MP재생' }, { k: 'pen', l: '관통' },
+                            { k: 'extraDmg', l: '추가피해' }, { k: 'execution', l: '처형' },
+                            { k: 'nullify', l: '무효화' }, { k: 'extraTurn', l: '추가턴' }
+                        ];
+                        for (const o of opts) {
+                            if (item[o.k]) return `${o.l}+${item[o.k]}%`;
+                        }
+                        return '';
+                    };
+
                     h += `
                         <div class="shop-item">
                             <div class="shop-item-info">
                                 <span class="shop-item-name">${it.name}</span>
-                                <span class="shop-item-detail">${it.atk ? 'ATK+' + it.atk : (it.def ? 'DEF+' + it.def : (it.hp ? 'HP+' + it.hp : 'MP+' + it.mp))}</span>
+                                <span class="shop-item-detail">${getDetail(it)}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <span class="shop-item-price">${pr}G</span>
@@ -1144,6 +1254,7 @@ class Game {
 
             renderGroup('무기', GAME_DATA.ITEMS.WEAPONS, 'WEAPONS');
             renderGroup('방어구', GAME_DATA.ITEMS.ARMORS, 'ARMORS');
+            renderGroup('장신구', GAME_DATA.ITEMS.ACCESSORIES, 'ACCESSORIES');
             renderGroup('소모품', GAME_DATA.ITEMS.CONSUMABLES, 'CONSUMABLES');
 
             // 인벤토리 확장 섹션
@@ -1178,11 +1289,30 @@ class Game {
                 p.inventory.forEach((it, idx) => {
                     const unitPrice = this.calculateSellPrice(it, true);
                     const plusText = it.plus > 0 ? ` +${it.plus}` : '';
+                    const getDetail = (item) => {
+                        if (item.category === 'MATERIAL') return '';
+                        if (item.atk) return 'ATK+' + item.atk;
+                        if (item.def) return 'DEF+' + item.def;
+                        if (item.hp) return 'HP+' + item.hp;
+                        if (item.mp) return 'MP+' + item.mp;
+
+                        const opts = [
+                            { k: 'cri', l: '치명타' }, { k: 'eva', l: '회피' }, { k: 'lifeSteal', l: '흡혈' },
+                            { k: 'hpRegen', l: 'HP재생' }, { k: 'mpRegen', l: 'MP재생' }, { k: 'pen', l: '관통' },
+                            { k: 'extraDmg', l: '추가피해' }, { k: 'execution', l: '처형' },
+                            { k: 'nullify', l: '무효화' }, { k: 'extraTurn', l: '추가턴' }
+                        ];
+                        for (const o of opts) {
+                            if (item[o.k]) return `${o.l}+${item[o.k]}%`;
+                        }
+                        return '';
+                    };
+
                     h += `
                         <div class="shop-item">
                             <div class="shop-item-info">
                                 <span class="shop-item-name">${it.name}${plusText}</span>
-                                <span class="shop-item-detail">${it.count > 1 ? `수량: ${it.count} / ` : ''}${it.atk ? 'ATK+' + it.atk : (it.def ? 'DEF+' + it.def : (it.hp ? 'HP+' + it.hp : 'MP+' + it.mp))}</span>
+                                <span class="shop-item-detail">${it.count > 1 ? `수량: ${it.count} / ` : ''}${getDetail(it)}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <span class="shop-item-price">${unitPrice.toLocaleString()}G</span>
@@ -1321,6 +1451,33 @@ class Game {
         } else if (it.category === 'ARMORS') {
             const old = p.equipment.armor; p.equipment.armor = it; p.inventory.splice(i, 1);
             if (old) p.inventory.push(old);
+        } else if (it.category === 'ACCESSORIES') {
+            // 장신구 슬롯 체크 (레벨 기반)
+            const unlockLevels = [20, 60, 100];
+            const availableSlots = unlockLevels.filter(lv => p.level >= lv).length;
+
+            if (availableSlots === 0) {
+                this.log('장신구를 착용할 수 있는 레벨이 아닙니다. (최소 Lv.20)', 'system');
+                return;
+            }
+
+            // 빈 슬롯 찾기
+            let slotIdx = -1;
+            for (let j = 0; j < availableSlots; j++) {
+                if (!p.equipment.accessory[j]) {
+                    slotIdx = j;
+                    break;
+                }
+            }
+
+            // 모든 가용 슬롯이 차있다면 첫 번째 슬롯과 교체 (또는 선택 팝업을 띄울 수도 있지만 우선 자동 교체)
+            if (slotIdx === -1) slotIdx = 0;
+
+            const old = p.equipment.accessory[slotIdx];
+            p.equipment.accessory[slotIdx] = it;
+            p.inventory.splice(i, 1);
+            if (old) p.inventory.push(old);
+            this.log(`장신구 슬롯 ${slotIdx + 1}에 <strong>${it.name}</strong>을(를) 장착했습니다.`, 'gain');
         }
         this.updateStats(); this.updateUI();
     }
@@ -1517,8 +1674,9 @@ class Game {
                 this.log(`보물상자에서 ${potion.name}을(를) 발견했지만, 가방이 가득 차 가져가지 못했습니다.`, 'lose');
             }
         } else {
-            // 5% 확률: 해당 티어 수준의 장비 (무기 또는 갑옷)
-            const type = Math.random() < 0.5 ? 'WEAPONS' : 'ARMORS';
+            // 5% 확률: 해당 티어 수준의 장비 (무기, 갑옷, 장신구)
+            const rType = Math.random();
+            const type = rType < 0.4 ? 'WEAPONS' : (rType < 0.8 ? 'ARMORS' : 'ACCESSORIES');
             let pool = GAME_DATA.ITEMS[type].filter(i => i.tier === tier);
 
             if (type === 'WEAPONS') {
@@ -1833,7 +1991,14 @@ class Game {
                 this.log(`${m.name}이(가) 공격을 신속하게 회피했습니다!`, 'system');
             } else {
                 let atkStat = p.job === '마법사' ? p.mag : p.atk;
-                let d = Math.max(1, atkStat - m.def);
+                let mDef = m.def;
+
+                // 관통력 적용 (방어력 무시)
+                if (p.pen > 0) {
+                    mDef = Math.max(0, mDef * (1 - p.pen / 100));
+                }
+
+                let d = Math.max(1, atkStat - mDef);
 
                 if (skill) {
                     this.log(`[스킬 사용] ${skill.name}!`, 'system');
@@ -1875,7 +2040,35 @@ class Game {
                     else this.log(`${m.name}에게 ${d} 피해.`);
                 }
 
+                // 초월 옵션: 추가 피해
+                p.equipment.accessory.forEach(acc => {
+                    if (acc && acc.extraDmg && Math.random() < acc.extraDmg / 100) {
+                        const ed = Math.floor(d * 0.5);
+                        d += ed;
+                        this.log(`[초월] 추가 피해 발생! (+${ed})`, 'crit');
+                    }
+                });
+
                 m.hp -= d;
+
+                // 초월 옵션: 처형
+                p.equipment.accessory.forEach(acc => {
+                    if (acc && acc.execution && (m.hp / m.hpMax * 100) <= acc.execution) {
+                        this.log(`[초월] 처형 조건 달성! ${m.name}을(를) 즉사시킵니다.`, 'death-notice');
+                        m.hp = 0;
+                    }
+                });
+
+                // 흡혈 적용
+                let totalLifeSteal = 0;
+                p.equipment.accessory.forEach(acc => { if (acc && acc.lifeSteal) totalLifeSteal += acc.lifeSteal; });
+                if (totalLifeSteal > 0 && d > 0) {
+                    const heal = Math.floor(d * (totalLifeSteal / 100));
+                    if (heal > 0) {
+                        p.hp = Math.min(p.hpMax, p.hp + heal);
+                        this.log(`[흡혈] HP ${heal} 회복.`, 'gain');
+                    }
+                }
 
                 this.updateMonsterUI();
             }
@@ -1898,7 +2091,33 @@ class Game {
 
             if (Math.random() < pEva / 100) {
                 this.log(`${m.name}의 공격을 회피했습니다!`, 'system');
+
+                // 초월 옵션: 회피 시 추가 턴
+                let extraTurnTriggered = false;
+                p.equipment.accessory.forEach(acc => {
+                    if (acc && acc.extraTurn && Math.random() < acc.extraTurn / 100) {
+                        extraTurnTriggered = true;
+                    }
+                });
+                if (extraTurnTriggered) {
+                    this.log(`[초월] 회피 후 기회를 포착했습니다! 추가 턴 획득!`, 'victory');
+                    return; // 몬스터 턴을 여기서 종료하고 다시 플레이어 턴으로 (추가 작업 필요: battleTurn을 다시 호출하는 방식 등)
+                    // 간편 구현: 몬스터 데미지 처리 스킵 및 리턴
+                }
             } else {
+                // 초월 옵션: 피해 무효화
+                let nullified = false;
+                p.equipment.accessory.forEach(acc => {
+                    if (acc && acc.nullify && Math.random() < acc.nullify / 100) {
+                        nullified = true;
+                    }
+                });
+
+                if (nullified) {
+                    this.log(`[초월] 피해 무효화 발동! 공격을 완전히 막아냈습니다.`, 'victory');
+                    return;
+                }
+
                 let md = Math.max(1, m.atk - p.def);
                 if (b.activeBuffs.some(buff => buff.type === 'ironWall')) {
                     const rLv = p.skillLevels['ws4'] || 0;
@@ -2108,6 +2327,30 @@ class Game {
             this.log(`[강철 심장] HP ${heal} 회복.`, 'gain');
         }
 
+        /* 장신구 재생 옵션 처리 */
+        let totalHpRegen = 0, totalMpRegen = 0;
+        p.equipment.accessory.forEach(acc => {
+            if (acc) {
+                totalHpRegen += (acc.hpRegen || 0);
+                totalMpRegen += (acc.mpRegen || 0);
+            }
+        });
+
+        if (totalHpRegen > 0) {
+            const heal = Math.floor(p.hpMax * (totalHpRegen / 100));
+            if (heal > 0) {
+                p.hp = Math.min(p.hpMax, p.hp + heal);
+                this.log(`[장신구] HP ${heal} 재생`, 'gain');
+            }
+        }
+        if (totalMpRegen > 0 && !mpRecoveryBlocked) {
+            const heal = Math.floor(p.mpMax * (totalMpRegen / 100));
+            if (heal > 0) {
+                p.mp = Math.min(p.mpMax, p.mp + heal);
+                this.log(`[장신구] MP ${heal} 재생`, 'gain');
+            }
+        }
+
         for (let k in b.skillCooldowns) {
             if (b.skillCooldowns[k] > 0) b.skillCooldowns[k]--;
         }
@@ -2261,6 +2504,11 @@ class Game {
         this.recalculateMaxStats();
         p.hp = p.hpMax; p.mp = p.mpMax; this.updateStats();
         this.log(`LEVEL UP! ${p.level} 레벨 달성!`, 'system');
+
+        // 장신구 슬롯 해금 안내
+        if (p.level === 20) this.log('<strong>[시스템]</strong> 장신구 슬롯 1이 해금되었습니다!', 'gain');
+        if (p.level === 60) this.log('<strong>[시스템]</strong> 장신구 슬롯 2이 해금되었습니다!', 'gain');
+        if (p.level === 100) this.log('<strong>[시스템]</strong> 장신구 슬롯 3이 해금되었습니다!', 'gain');
     }
 
     /**
@@ -2300,7 +2548,9 @@ class Game {
      * 초월 장비 드랍 처리
      */
     handleTranscendenceDrop(dg) {
-        const type = Math.random() < 0.5 ? 'WEAPONS' : 'ARMORS';
+        const p = this.gameState.player;
+        const rType = Math.random();
+        const type = rType < 0.4 ? 'WEAPONS' : (rType < 0.8 ? 'ARMORS' : 'ACCESSORIES');
         let item;
         if (type === 'WEAPONS') {
             item = GAME_DATA.ITEMS[type].find(i => i.grade === '초월' && (i.job === p.job || (p.job === '초보자' && i.job === '전사')));
@@ -2376,17 +2626,26 @@ class Game {
             </div>
             <div class="shop-grid">`;
 
-        const renderEqRow = (it, type, label) => {
+        const renderEqRow = (it, type, label, isAcc = false) => {
             if (!it) return;
             const plus = it.plus || 0;
-            const cost = Math.floor(100 * (it.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
-            const { successRate, downRate, destroyRate, failRate } = this.getReinforcementRates(plus);
+            let cost = Math.floor(100 * (it.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
+            if (isAcc) cost = Math.floor(100 * (it.tier || 1) * Math.pow(1.5, plus + 2) * this.gameState.world.inflation);
+            const { successRate, downRate, destroyRate, failRate } = this.getReinforcementRates(plus, isAcc);
 
-            const getStatPreview = (statKey, label) => {
-                if (!it[statKey]) return '';
-                const cur = Math.floor(it[statKey] * Math.pow(1.12, plus));
-                const next = Math.floor(it[statKey] * Math.pow(1.12, plus + 1));
-                return `${plus < 10 ? `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span></div>` : `<div>${label} ${cur}</div>`}`;
+            const getStatPreview = (statKey, label, isAcc = false) => {
+                if (it[statKey] === undefined) return '';
+                let cur, next;
+                if (isAcc) {
+                    cur = it[statKey] + plus;
+                    next = it[statKey] + plus + 1;
+                    const unit = '%';
+                    return `${plus < 5 ? `<div>${label} ${cur}${unit} <span style="color:var(--accent-cyan)">→ ${next}${unit}</span></div>` : `<div>${label} ${cur}${unit}</div>`}`;
+                } else {
+                    cur = Math.floor(it[statKey] * Math.pow(1.12, plus));
+                    next = Math.floor(it[statKey] * Math.pow(1.12, plus + 1));
+                    return `${plus < 10 ? `<div>${label} ${cur} <span style="color:var(--accent-cyan)">→ ${next}</span></div>` : `<div>${label} ${cur}</div>`}`;
+                }
             };
 
             h += `
@@ -2396,16 +2655,26 @@ class Game {
                         <span class="shop-item-price">${cost.toLocaleString()}G</span>
                     </div>
                     <div style="font-size:0.8rem; width:100%; color:var(--text-dim);">
-                        ${getStatPreview('atk', '공격력')} ${getStatPreview('def', '방어력')}
+                        ${getStatPreview('atk', '공격력')} 
+                        ${getStatPreview('def', '방어력')}
+                        ${getStatPreview('cri', '치명타율', true)}
+                        ${getStatPreview('eva', '회피율', true)}
+                        ${getStatPreview('pen', '방어관통', true)}
+                        ${getStatPreview('lifeSteal', '흡혈', true)}
+                        ${getStatPreview('hpRegen', 'HP재생', true)}
+                        ${getStatPreview('mpRegen', 'MP재생', true)}
+                        ${getStatPreview('extraDmg', '추가피해', true)}
+                        ${getStatPreview('nullify', '피해무효', true)}
+                        ${getStatPreview('extraTurn', '추가턴', true)}
                     </div>
                     <div style="font-size:0.7rem; display:flex; gap:10px;">
-                    ${plus < 10 ? `
+                    ${(isAcc ? plus < 5 : plus < 10) ? `
                         <span style="color:var(--accent-cyan)">성공: ${successRate}%</span>
                         ${downRate > 0 ? `<span style="color:#ff884d">하락: ${downRate}%</span>` : ''}
                         ${destroyRate > 0 ? `<span style="color:#ff4d4d">파괴: ${destroyRate}%</span>` : ''}
                     ` : ` `}
                     </div>
-                    ${plus >= 10 ? `
+                    ${(isAcc ? plus >= 5 : plus >= 10) ? `
                         <div style="width:100%; text-align:center; padding:10px; background:rgba(0,242,255,0.1); border-radius:4px; margin-top:5px; color:var(--accent-cyan); font-weight:700;">
                             최대 강화 단계입니다.
                         </div>
@@ -2418,6 +2687,9 @@ class Game {
         };
         renderEqRow(weapon, 'weapon', '무기');
         renderEqRow(armor, 'armor', '방어구');
+        eq.accessory.forEach((acc, i) => {
+            if (acc) renderEqRow(acc, `accessory_${i}`, `장신구 ${i + 1}`, true);
+        });
         return h + '</div>';
     }
 
@@ -2426,11 +2698,11 @@ class Game {
      */
     getCraftingUI(type) {
         const p = this.gameState.player;
-        const category = type === 'blacksmith' ? ['WEAPONS', 'ARMORS'] : ['CONSUMABLES'];
+        const categories = type === 'blacksmith' ? ['WEAPONS', 'ARMORS', 'ACCESSORIES'] : ['CONSUMABLES'];
 
-        // 해당 카테고리에 속한 모든 제작 아이템(신화/순수 등) 리스트
+        // 해당 카테고리에 속한 모든 제작 아이템(신화/순수/전설 등) 리스트
         const items = [];
-        category.forEach(cat => {
+        categories.forEach(cat => {
             GAME_DATA.ITEMS[cat].forEach(it => {
                 if (it.grade === '신화' || it.grade === '순수') {
                     items.push({ ...it, cat });
@@ -2463,7 +2735,15 @@ class Game {
      */
     selectCraftItem(id, type) {
         const p = this.gameState.player;
-        const cat = type === 'blacksmith' ? (id.startsWith('w') ? 'WEAPONS' : 'ARMORS') : 'CONSUMABLES';
+        let cat;
+        if (type === 'alchemy') {
+            cat = 'CONSUMABLES';
+        } else {
+            if (id.startsWith('acc')) cat = 'ACCESSORIES';
+            else if (id.startsWith('w') || id.startsWith('mw')) cat = 'WEAPONS';
+            else cat = 'ARMORS';
+        }
+
         const it = GAME_DATA.ITEMS[cat].find(i => i.id === id);
         const craftData = GAME_DATA.CRAFTING[id];
         const recipeKey = 'r_' + id;
@@ -2540,7 +2820,16 @@ class Game {
     craftItem(id, type) {
         const p = this.gameState.player;
         const craftData = GAME_DATA.CRAFTING[id];
-        const cat = type === 'blacksmith' ? (id.startsWith('w') ? 'WEAPONS' : 'ARMORS') : 'CONSUMABLES';
+
+        let cat;
+        if (type === 'alchemy') {
+            cat = 'CONSUMABLES';
+        } else {
+            if (id.startsWith('acc')) cat = 'ACCESSORIES';
+            else if (id.startsWith('w') || id.startsWith('mw')) cat = 'WEAPONS';
+            else cat = 'ARMORS';
+        }
+
         const itData = GAME_DATA.ITEMS[cat].find(i => i.id === id);
 
         // 최종 검증
@@ -2578,16 +2867,31 @@ class Game {
      */
     reinforce(type) {
         const p = this.gameState.player; const eq = p.equipment;
-        const target = eq[type];
+        let target;
+        let isAccessory = false;
+
+        if (type.startsWith('accessory_')) {
+            const idx = parseInt(type.split('_')[1]);
+            target = eq.accessory[idx];
+            isAccessory = true;
+        } else {
+            target = eq[type];
+        }
+
         if (!target) return;
 
         const plus = target.plus || 0;
-        if (plus >= 10) {
+        if (plus >= 5 && isAccessory) {
+            alert('장신구는 최대 +5강까지만 가능합니다.');
+            return;
+        }
+        if (plus >= 10 && !isAccessory) {
             alert('이미 최대 강화 단계(+10)입니다.');
             return;
         }
 
-        const cost = Math.floor(100 * (target.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
+        let cost = Math.floor(100 * (target.tier || 1) * Math.pow(1.5, plus) * this.gameState.world.inflation);
+        if (isAccessory) cost = Math.floor(100 * (target.tier || 1) * Math.pow(1.5, plus + 2) * this.gameState.world.inflation);
 
         // 골드 부족 체크
         if (p.gold < cost) { alert('골드 부족'); return; }
@@ -2595,7 +2899,7 @@ class Game {
 
         const r = Math.random() * 100;
         let result = 'success'; // success, fail, down, destroy
-        const { successRate, downRate, destroyRate } = this.getReinforcementRates(plus);
+        const { successRate, downRate, destroyRate } = this.getReinforcementRates(plus, isAccessory);
 
         if (r < successRate) result = 'success';
         else if (destroyRate > 0 && r < successRate + destroyRate) result = 'destroy';
@@ -2611,8 +2915,13 @@ class Game {
             this.log(`[강화 실패] ${target.name}의 강화 단계가 하락했습니다...`, 'reinforce-down');
         } else if (result === 'destroy') {
             this.log(`[강화 실패] !!! ${target.name}이(가) 파괴되었습니다 !!!`, 'reinforce-destroy');
-            if (eq.weapon === target) eq.weapon = null;
-            else if (eq.armor === target) eq.armor = null;
+            if (isAccessory) {
+                const idx = parseInt(type.split('_')[1]);
+                eq.accessory[idx] = null;
+            } else {
+                if (eq.weapon === target) eq.weapon = null;
+                else if (eq.armor === target) eq.armor = null;
+            }
         } else {
             this.log(`[강화 실패] ${target.name} 강화에 실패했습니다.`, 'reinforce-fail');
         }
