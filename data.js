@@ -140,6 +140,46 @@ const GAME_DATA = {
             { id: 'mp4', name: '고농축 MP 포션', grade: '고농축', tier: 4, mp: 1080, price: 1200 },
             { id: 'mp5', name: '극농축 MP 포션', grade: '극농축', tier: 5, mp: 3000, price: 7000 },
             { id: 'mp6', name: '순수한 마나수', grade: '순수', tier: 6, mp: 12000, price: 0 }
+        ],
+        // 장신구 — 특수 옵션 제공 (장신구당 한 가지 효과만 보유)
+        ACCESSORIES: [
+            // 일반 등급 (Town 2 판매) - Tier 2
+            { id: 'acc_cri_n', name: '치명타의 반지', grade: '일반', tier: 2, price: 3000, cri: 4 },
+            { id: 'acc_eva_n', name: '회피의 목걸이', grade: '일반', tier: 2, price: 3000, eva: 4 },
+            { id: 'acc_ls_n', name: '흡혈의 귀걸이', grade: '일반', tier: 2, price: 5000, lifeSteal: 2 },
+            { id: 'acc_hp_n', name: '재생의 휘장', grade: '일반', tier: 2, price: 4000, hpRegen: 1 },
+            { id: 'acc_mp_n', name: '마력의 수정', grade: '일반', tier: 2, price: 4000, mpRegen: 1 },
+            { id: 'acc_pen_n', name: '관통의 팔찌', grade: '일반', tier: 2, price: 3500, pen: 8 },
+
+            // 레어 등급 (Town 4 판매) - Tier 4
+            { id: 'acc_cri_r', name: '숙련자의 반지', grade: '레어', tier: 4, price: 35000, cri: 9 },
+            { id: 'acc_eva_r', name: '민첩의 목걸이', grade: '레어', tier: 4, price: 35000, eva: 9 },
+            { id: 'acc_ls_r', name: '갈증의 귀걸이', grade: '레어', tier: 4, price: 55000, lifeSteal: 5 },
+            { id: 'acc_hp_r', name: '치유의 휘장', grade: '레어', tier: 4, price: 45000, hpRegen: 2 },
+            { id: 'acc_mp_r', name: '명상의 수정', grade: '레어', tier: 4, price: 45000, mpRegen: 2 },
+            { id: 'acc_pen_r', name: '파괴의 팔찌', grade: '레어', tier: 4, price: 40000, pen: 18 },
+
+            // 영웅 등급 (Town 6 판매) - Tier 6
+            { id: 'acc_cri_h', name: '용사의 반지', grade: '영웅', tier: 6, price: 200000, cri: 15 },
+            { id: 'acc_eva_h', name: '바람의 목걸이', grade: '영웅', tier: 6, price: 200000, eva: 15 },
+            { id: 'acc_ls_h', name: '선혈의 귀걸이', grade: '영웅', tier: 6, price: 300000, lifeSteal: 9 },
+            { id: 'acc_hp_h', name: '생명의 휘장', grade: '영웅', tier: 6, price: 250000, hpRegen: 3 },
+            { id: 'acc_mp_h', name: '영혼의 수정', grade: '영웅', tier: 6, price: 250000, mpRegen: 3 },
+            { id: 'acc_pen_h', name: '심판의 팔찌', grade: '영웅', tier: 6, price: 220000, pen: 32 },
+
+            // 전설 등급 (대장간 제작) - Tier 7
+            { id: 'acc_cri_l', name: '고대 제왕의 반지', grade: '신화', tier: 7, price: 1500000, cri: 25 },
+            { id: 'acc_eva_l', name: '고대 환영의 목걸이', grade: '신화', tier: 7, price: 1500000, eva: 25 },
+            { id: 'acc_ls_l', name: '고대 악마의 귀걸이', grade: '신화', tier: 7, price: 2200000, lifeSteal: 15 },
+            { id: 'acc_hp_l', name: '고대 성자의 휘장', grade: '신화', tier: 7, price: 1800000, hpRegen: 6 },
+            { id: 'acc_mp_l', name: '고대 현자의 수정', grade: '신화', tier: 7, price: 1800000, mpRegen: 6 },
+            { id: 'acc_pen_l', name: '고대 거인의 팔찌', grade: '신화', tier: 7, price: 1600000, pen: 55 },
+
+            // 초월 등급 (초월 몬스터 드랍) - Tier 7
+            { id: 'acc_t_dmg', name: '공허의 심장', grade: '초월', tier: 7, price: 0, extraDmg: 30 },
+            { id: 'acc_t_exec', name: '처형자의 인장', grade: '초월', tier: 7, price: 0, execution: 20 },
+            { id: 'acc_t_null', name: '아이기스의 펜던트', grade: '초월', tier: 7, price: 0, nullify: 18 },
+            { id: 'acc_t_turn', name: '가속의 고리', grade: '초월', tier: 7, price: 0, extraTurn: 25 }
         ]
     },
 
@@ -150,7 +190,13 @@ const GAME_DATA = {
         'r_mw6': { id: 'r_mw6', name: '심연의 눈 레시피', targetId: 'mw6', category: 'WEAPONS' },
         'r_a6': { id: 'r_a6', name: '심연의 갑주 레시피', targetId: 'a6', category: 'ARMORS' },
         'r_p6': { id: 'r_p6', name: '순수한 생명수 레시피', targetId: 'p6', category: 'CONSUMABLES' },
-        'r_mp6': { id: 'r_mp6', name: '순수한 마나수 레시피', targetId: 'mp6', category: 'CONSUMABLES' }
+        'r_mp6': { id: 'r_mp6', name: '순수한 마나수 레시피', targetId: 'mp6', category: 'CONSUMABLES' },
+        'r_acc_cri_l': { id: 'r_acc_cri_l', name: '고대 제왕의 반지 레시피', targetId: 'acc_cri_l', category: 'ACCESSORIES' },
+        'r_acc_eva_l': { id: 'r_acc_eva_l', name: '고대 환영의 목걸이 레시피', targetId: 'acc_eva_l', category: 'ACCESSORIES' },
+        'r_acc_ls_l': { id: 'r_acc_ls_l', name: '고대 악마의 귀걸이 레시피', targetId: 'acc_ls_l', category: 'ACCESSORIES' },
+        'r_acc_hp_l': { id: 'r_acc_hp_l', name: '고대 성자의 휘장 레시피', targetId: 'acc_hp_l', category: 'ACCESSORIES' },
+        'r_acc_mp_l': { id: 'r_acc_mp_l', name: '고대 현자의 수정 레시피', targetId: 'acc_mp_l', category: 'ACCESSORIES' },
+        'r_acc_pen_l': { id: 'r_acc_pen_l', name: '고대 거인의 팔찌 레시피', targetId: 'acc_pen_l', category: 'ACCESSORIES' }
     },
 
     // ─── 제작 재료 및 비용 ───────────────────────────────────
@@ -160,7 +206,13 @@ const GAME_DATA = {
         'mw6': { materials: { '용의 핵심': 10, '타락한 깃털': 50 }, gold: 500000 },
         'a6': { materials: { '용의 핵심': 8, '검은 성서': 60 }, gold: 500000 },
         'p6': { materials: { '공허의 정수': 5 }, gold: 100000 },
-        'mp6': { materials: { '공허의 정수': 5 }, gold: 100000 }
+        'mp6': { materials: { '공허의 정수': 5 }, gold: 100000 },
+        'acc_cri_l': { materials: { '용의 핵심': 10, '타락한 깃털': 20 }, gold: 1200000 },
+        'acc_eva_l': { materials: { '용의 핵심': 10, '검은 성서': 20 }, gold: 1200000 },
+        'acc_ls_l': { materials: { '용의 핵심': 15, '공허의 정수': 10 }, gold: 1500000 },
+        'acc_hp_l': { materials: { '공허의 정수': 15, '검은 성서': 30 }, gold: 1000000 },
+        'acc_mp_l': { materials: { '공허의 정수': 15, '타락한 깃털': 30 }, gold: 1000000 },
+        'acc_pen_l': { materials: { '용의 핵심': 15, '검은 성서': 15 }, gold: 1300000 }
     },
 
     // ─── 전사 스킬 ───────────────────────────────────────────
