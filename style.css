@@ -583,6 +583,18 @@ button.secondary {
     font-weight: 700;
 }
 
+.eq-slot.locked {
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.05);
+    border-style: dashed;
+    cursor: not-allowed;
+}
+
+.eq-slot.locked .slot-item {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+}
+
 .slot-item {
     font-size: 0.85rem;
     font-weight: 600;
