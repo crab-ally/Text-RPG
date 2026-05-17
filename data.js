@@ -108,13 +108,13 @@ const GAME_DATA = {
             { id: 'w6', name: '혼돈의 파괴자', grade: '신화', tier: 6, atk: 2800, price: 0, job: '전사' },
             { id: 'w7', name: '공허의 종결자', grade: '초월', tier: 7, atk: 9000, price: 0, job: '전사' },
             // 마법사용 무기
-            { id: 'mw1', name: '낡은 지팡이', grade: '일반', tier: 1, atk: 12, price: 50, job: '마법사' },
-            { id: 'mw2', name: '수정 구슬', grade: '고급', tier: 2, atk: 35, price: 1000, job: '마법사' },
-            { id: 'mw3', name: '현자의 마법서', grade: '레어', tier: 3, atk: 90, price: 10000, job: '마법사' },
-            { id: 'mw4', name: '대마법사의 지팡이', grade: '영웅', tier: 4, atk: 250, price: 100000, job: '마법사' },
-            { id: 'mw5', name: '성스러운 마법봉', grade: '전설', tier: 5, atk: 800, price: 1000000, job: '마법사' },
-            { id: 'mw6', name: '심연의 눈', grade: '신화', tier: 6, atk: 2800, price: 0, job: '마법사' },
-            { id: 'mw7', name: '공허의 창조자', grade: '초월', tier: 7, atk: 9000, price: 0, job: '마법사' }
+            { id: 'mw1', name: '낡은 지팡이', grade: '일반', tier: 1, mag: 12, price: 50, job: '마법사' },
+            { id: 'mw2', name: '수정 구슬', grade: '고급', tier: 2, mag: 35, price: 1000, job: '마법사' },
+            { id: 'mw3', name: '현자의 마법서', grade: '레어', tier: 3, mag: 90, price: 10000, job: '마법사' },
+            { id: 'mw4', name: '대마법사의 지팡이', grade: '영웅', tier: 4, mag: 250, price: 100000, job: '마법사' },
+            { id: 'mw5', name: '성스러운 마법봉', grade: '전설', tier: 5, mag: 800, price: 1000000, job: '마법사' },
+            { id: 'mw6', name: '심연의 눈', grade: '신화', tier: 6, mag: 2800, price: 0, job: '마법사' },
+            { id: 'mw7', name: '공허의 창조자', grade: '초월', tier: 7, mag: 9000, price: 0, job: '마법사' }
         ],
         // 방어구 — 티어별 방어력 상승
         ARMORS: [
