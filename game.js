@@ -398,6 +398,14 @@ class Game {
                 </div>
             `;
         }
+        if (item.mag) {
+            statsHtml += `
+                <div class="tooltip-stat-row">
+                    <span class="tooltip-stat-label">마력</span>
+                    <span class="tooltip-stat-value">${getStatValue('mag')}</span>
+                </div>
+            `;
+        }
         if (item.def) {
             statsHtml += `
                 <div class="tooltip-stat-row">
@@ -742,7 +750,10 @@ class Game {
             // 플레이어 상태이상 효과 적용
             if (this.currentBattle.playerStatusEffects) {
                 this.currentBattle.playerStatusEffects.forEach(s => {
-                    if (s.type === 'fear') p.atk = Math.floor(p.atk * 0.75);
+                    if (s.type === 'fear') {
+                        if (p.job === '마법사') p.mag = Math.floor(p.mag * 0.75);
+                        else p.atk = Math.floor(p.atk * 0.75);
+                    }
                     if (s.type === 'weaken') p.def = Math.floor(p.def * 0.75);
                     if (s.type === 'slow') p.eva = Math.max(0, p.eva - 10);
                 });
@@ -1221,6 +1232,7 @@ class Game {
                     const getDetail = (item) => {
                         if (cat === 'MATERIAL') return '';
                         if (item.atk) return 'ATK+' + item.atk;
+                        if (item.mag) return 'MAG+' + item.mag;
                         if (item.def) return 'DEF+' + item.def;
                         if (item.hp) return 'HP+' + item.hp;
                         if (item.mp) return 'MP+' + item.mp;
@@ -1292,6 +1304,7 @@ class Game {
                     const getDetail = (item) => {
                         if (item.category === 'MATERIAL') return '';
                         if (item.atk) return 'ATK+' + item.atk;
+                        if (item.mag) return 'MAG+' + item.mag;
                         if (item.def) return 'DEF+' + item.def;
                         if (item.hp) return 'HP+' + item.hp;
                         if (item.mp) return 'MP+' + item.mp;
@@ -2656,6 +2669,7 @@ class Game {
                     </div>
                     <div style="font-size:0.8rem; width:100%; color:var(--text-dim);">
                         ${getStatPreview('atk', '공격력')} 
+                        ${getStatPreview('mag', '마력')} 
                         ${getStatPreview('def', '방어력')}
                         ${getStatPreview('cri', '치명타율', true)}
                         ${getStatPreview('eva', '회피율', true)}
@@ -2751,10 +2765,26 @@ class Game {
         const isDiscovered = p.discoveredRecipes.includes(recipeKey);
         const isUnlocked = p.unlockedRecipes.includes(recipeKey);
 
+        let statTexts = [];
+        if (it.atk) statTexts.push('공격력 +' + it.atk);
+        if (it.mag) statTexts.push('마력 +' + it.mag);
+        if (it.def) statTexts.push('방어력 +' + it.def);
+        if (it.hp) statTexts.push('효과: HP ' + it.hp + ' 회복');
+        if (it.mp) statTexts.push('효과: MP ' + it.mp + ' 회복');
+        if (it.cri) statTexts.push('치명타율 +' + it.cri + '%');
+        if (it.eva) statTexts.push('회피율 +' + it.eva + '%');
+        if (it.pen) statTexts.push('방어관통 +' + it.pen + '%');
+        if (it.lifeSteal) statTexts.push('흡혈 +' + it.lifeSteal + '%');
+        if (it.hpRegen) statTexts.push('HP재생 +' + it.hpRegen + '%');
+        if (it.mpRegen) statTexts.push('MP재생 +' + it.mpRegen + '%');
+        if (it.extraDmg) statTexts.push('추가피해 +' + it.extraDmg + '%');
+        if (it.nullify) statTexts.push('피해무효 +' + it.nullify + '%');
+        if (it.extraTurn) statTexts.push('추가턴 +' + it.extraTurn + '%');
+
         let h = `
             <div class="crafting-header">
                 <div class="crafting-name ${this.getGradeClass(it.grade)}">${it.name}</div>
-                <div class="crafting-desc">${it.atk ? '공격력 +' + it.atk : (it.def ? '방어력 +' + it.def : '효과: HP ' + it.hp + ' 회복')}</div>
+                <div class="crafting-desc" style="font-size:0.8rem;">${statTexts.join(' / ')}</div>
             </div>
             <div class="materials-section">
                 <h4 style="margin-bottom:10px; font-size:0.85rem; color:var(--text-dim);">필요 재료</h4>
