@@ -1216,8 +1216,8 @@ class Game {
                         return Number(i.tier) === potionTier && (i.hp != null || i.mp != null);
                     }
                     if (cat === 'WEAPONS') {
-                        // 직업에 맞는 무기만 필터링 (초보자는 1티어 전체 노출)
-                        const isJobMatch = (p.job === '초보자' && i.tier === 1) || i.job === p.job;
+                        // 직업에 맞는 무기만 필터링 (초보자는 1티어 전사 무기만 노출)
+                        const isJobMatch = (p.job === '초보자' && i.tier === 1 && i.job === '전사') || i.job === p.job;
                         return isJobMatch && (i.grade !== '신화' && i.grade !== '초월') && (i.tier || 0) === Math.min(tier, 5);
                     }
                     if (cat === 'ARMORS') {
