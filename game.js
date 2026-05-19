@@ -1142,18 +1142,25 @@ class Game {
         this.openTraining(); // UI 갱신
     }
 
+    // 전직 시 1회 호출하는 함수
     changeJob(job) {
         const p = this.gameState.player;
+        const items = GAME_DATA.ITEMS.WEAPONS;
+        let giveItem = [];
+
         p.job = job;
 
-        // 직업에 맞지 않는 무기 자동 해제
+        // 직업에 맞지 않는 무기 자동 해제 & 직업에 맞는 무기 지급
         if (p.equipment.weapon) {
             const w = p.equipment.weapon;
             const isMatch = (p.job === '초보자' && w.tier === 1) || w.job === p.job;
             if (!isMatch) {
-                p.inventory.push(p.equipment.weapon);
-                p.equipment.weapon = null;
+                giveItem = items.filter(item => item.job === p.job && item.tier === 1);
+                const currentPlus = w.plus || 0;
+                p.inventory.push(w);
+                p.equipment.weapon = { ...giveItem[0], category: 'WEAPONS', count: 1, plus: currentPlus };
                 this.log('직업이 변경되어 기존 무기가 해제되었습니다.', 'system');
+                this.log('직업이 변경되어 직업에 맞는 무기가 자동 장착되었습니다.', 'system');
             }
         }
 
